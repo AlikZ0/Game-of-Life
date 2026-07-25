@@ -30,4 +30,17 @@ describe('App (e2e)', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('status');
   });
+
+  it('GET /health/ready → reports DB + Redis dependencies', async () => {
+    const res = await request(app.getHttpServer()).get('/health/ready');
+    expect(res.status).toBe(200);
+    expect(res.body.dependencies).toHaveProperty('db');
+    expect(res.body.dependencies).toHaveProperty('redis');
+  });
+
+  it('GET /metrics → Prometheus exposition', async () => {
+    const res = await request(app.getHttpServer()).get('/metrics');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('http_requests_total');
+  });
 });

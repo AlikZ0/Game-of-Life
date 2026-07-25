@@ -173,6 +173,26 @@ flowchart LR
 | **Healthchecks** | NestJS Terminus | `/health/live` (process), `/health/ready` (DB+Redis reachable) → k8s liveness/readiness probes |
 | **Alerting** | Alertmanager → Slack/PagerDuty | error-rate, p95 latency, queue backlog, DB replica lag, cert expiry |
 
+### Implemented today
+
+The API already ships the endpoints the platform scrapes:
+
+- **`GET /metrics`** — Prometheus exposition (excluded from the API prefix and
+  from auth). Exposes default process metrics plus `http_requests_total` and
+  `http_request_duration_seconds{method,route,status}` recorded by a global
+  interceptor (route pattern labels keep cardinality bounded). Point a
+  `ServiceMonitor` / scrape job at it.
+- **`GET /health`** — liveness (process up); **`GET /health/ready`** — readiness
+  with a real DB `SELECT 1` + Redis `PING`, returning per-dependency status.
+- **Structured logs** — pino JSON on stdout with `authorization`/`cookie`
+  redaction; ship stdout to Loki/ELK.
+
+**Suggested Grafana dashboards:** (1) *API RED* — request rate, error ratio and
+p50/p95/p99 latency from `http_request_duration_seconds`, split by route; (2)
+*Runtime* — event-loop lag, heap, GC from the default metrics; (3) *Gameplay* —
+completions/min and level-ups derived from app counters (extend `MetricsService`
+with business counters as needed).
+
 ---
 
 ## 6. Autoscaling & Zero-Downtime

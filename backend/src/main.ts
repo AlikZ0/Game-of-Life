@@ -3,12 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger)); // structured JSON logging via pino
   const config = app.get(ConfigService);
 
   const apiPrefix = config.get<string>('app.apiPrefix', 'api/v1');
@@ -18,7 +20,9 @@ async function bootstrap() {
   // Security & platform hardening
   app.use(helmet());
   app.enableCors({ origin: corsOrigins, credentials: true });
-  app.setGlobalPrefix(apiPrefix, { exclude: ['health', 'metrics'] });
+  app.setGlobalPrefix(apiPrefix, {
+    exclude: ['health', 'health/ready', 'metrics'],
+  });
   app.enableShutdownHooks();
 
   // Global validation, error handling and response envelope

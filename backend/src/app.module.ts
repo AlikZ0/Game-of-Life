@@ -1,13 +1,17 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { LoggerModule } from 'nestjs-pino';
 import configuration from './config/configuration';
 import { validateEnv } from './config/env.validation';
 import { JwtAuthGuard } from './modules/auth/infrastructure/jwt-auth.guard';
 import { PrismaModule } from './infra/prisma/prisma.module';
+import { RedisModule } from './infra/redis/redis.module';
+import { MetricsInterceptor } from './observability/metrics/metrics.interceptor';
+import { MetricsModule } from './observability/metrics/metrics.module';
 
 import { AchievementsModule } from './modules/achievements/achievements.module';
 import { AiCoachModule } from './modules/ai-coach/ai-coach.module';
@@ -33,6 +37,17 @@ import { StreaksModule } from './modules/streaks/streaks.module';
       load: [configuration],
       validate: validateEnv,
     }),
+    LoggerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        pinoHttp: {
+          level: config.get<string>('app.logLevel', 'info'),
+          autoLogging: true,
+          // Never log bearer tokens or cookies.
+          redact: ['req.headers.authorization', 'req.headers.cookie'],
+        },
+      }),
+    }),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => [
@@ -53,6 +68,8 @@ import { StreaksModule } from './modules/streaks/streaks.module';
       }),
     }),
     PrismaModule,
+    RedisModule,
+    MetricsModule,
 
     // ── Bounded contexts ─────────────────────────────────
     AuthModule,
@@ -76,6 +93,8 @@ import { StreaksModule } from './modules/streaks/streaks.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     // Global rate limiting
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Prometheus HTTP metrics for every request
+    { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
   ],
 })
 export class AppModule {}

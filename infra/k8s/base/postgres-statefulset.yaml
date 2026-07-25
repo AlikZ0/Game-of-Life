@@ -1,0 +1,104 @@
+# ============================================================================
+#  PostgreSQL — in-cluster StatefulSet for staging / self-hosted setups.
+#
+#  ⚠️  PRODUCTION RECOMMENDATION: prefer a managed database
+#      (AWS RDS, GCP Cloud SQL, Azure Database) for backups, HA, PITR and
+#      failover. In that case delete this file from the overlay and point
+#      DATABASE_URL (in the Secret) at the managed endpoint.
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: lifequest
+spec:
+  # Headless service — stable network id for the StatefulSet pod.
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: lifequest
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/part-of: lifequest
+    spec:
+      securityContext:
+        # postgres:16-alpine runs as uid 70; own the data dir.
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: lifequest-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: lifequest-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: lifequest-secrets
+                  key: POSTGRES_DB
+            # Store data in a subdir so lost+found doesn't break initdb.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+  # Persistent storage — one PVC per replica, retained across restarts.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+        # storageClassName: gp3   # set per-cluster (uncomment/override in overlay)

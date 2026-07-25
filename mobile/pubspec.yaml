@@ -1,0 +1,61 @@
+name: life_quest
+description: "Life Quest — turn your real life into an RPG. Premium Flutter client."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # Networking
+  dio: ^5.5.0
+
+  # Models / serialization
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+  # Local storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_secure_storage: ^9.2.2
+
+  # UI / design
+  google_fonts: ^6.2.1
+  fl_chart: ^0.68.0
+  intl: ^0.19.0
+
+  # Auth providers
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.1
+
+  # Misc
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+
+  # Codegen
+  build_runner: ^2.4.11
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/

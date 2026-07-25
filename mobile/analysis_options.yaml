@@ -1,0 +1,21 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    invalid_annotation_target: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "lib/generated/**"
+
+linter:
+  rules:
+    - prefer_const_constructors
+    - prefer_const_constructors_in_immutables
+    - prefer_const_declarations
+    - prefer_final_locals
+    - avoid_print
+    - always_declare_return_types
+    - require_trailing_commas
+    - sort_child_properties_last
+    - use_key_in_widget_constructors

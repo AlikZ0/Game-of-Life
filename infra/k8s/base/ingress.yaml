@@ -1,0 +1,61 @@
+# ============================================================================
+#  Ingress — public entrypoint via ingress-nginx, TLS via cert-manager.
+#  Host is patched per-overlay (api.lifequest.app for prod).
+#  Handles REST (/api), Swagger (/docs) and Socket.IO WebSocket upgrades.
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lifequest
+  labels:
+    app.kubernetes.io/part-of: lifequest
+  annotations:
+    # cert-manager issues + renews the TLS cert from this ClusterIssuer.
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # WebSocket / long-poll friendly timeouts for Socket.IO.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Force HTTPS.
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    # Body size for uploads (avatars etc.).
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # Security headers at the edge.
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-Frame-Options: SAMEORIGIN";
+      more_set_headers "Referrer-Policy: no-referrer-when-downgrade";
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.lifequest.app
+      secretName: lifequest-tls
+  rules:
+    - host: api.lifequest.app
+      http:
+        paths:
+          # Socket.IO WebSocket endpoint.
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          # REST API.
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          # Swagger UI.
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80

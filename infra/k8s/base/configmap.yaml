@@ -1,0 +1,32 @@
+# ============================================================================
+#  Non-secret runtime configuration shared by the API, worker and migrate job.
+#  Secrets (DB URL, JWT secrets, Stripe, Firebase) live in the Secret object.
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lifequest-config
+  labels:
+    app.kubernetes.io/part-of: lifequest
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  API_PREFIX: "api/v1"
+
+  # Redis connection (in-cluster Service). Swap for a managed Redis host in prod.
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_URL: "redis://redis:6379"
+
+  # Token lifetimes (seconds). Secrets themselves come from the Secret object.
+  JWT_ACCESS_TTL: "900"
+  JWT_REFRESH_TTL: "2592000"
+
+  # Rate limiting.
+  THROTTLE_TTL: "60"
+  THROTTLE_LIMIT: "120"
+
+  LOG_LEVEL: "info"
+
+  # Allowed CORS origins (comma-separated). Override per-overlay.
+  CORS_ORIGINS: "https://app.lifequest.app"

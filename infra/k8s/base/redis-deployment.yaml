@@ -1,0 +1,84 @@
+# ============================================================================
+#  Redis — cache + BullMQ broker.
+#  Single replica with an emptyDir (ephemeral): the queue is reconstructable
+#  and cache is disposable. For durable queues in prod, use a managed Redis
+#  (ElastiCache / Memorystore) and point REDIS_URL at it.
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: lifequest
+spec:
+  selector:
+    app.kubernetes.io/name: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: lifequest
+spec:
+  replicas: 1
+  # Redis is single-writer; never surge to two pods on the same data.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/part-of: lifequest
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          args: ["redis-server", "--maxmemory-policy", "noeviction"]
+          ports:
+            - name: redis
+              containerPort: 6379
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 15
+      volumes:
+        - name: data
+          emptyDir: {}

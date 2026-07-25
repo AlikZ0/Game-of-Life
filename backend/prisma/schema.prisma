@@ -1,0 +1,611 @@
+// ============================================================================
+//  Life Quest — Prisma schema (PostgreSQL)
+//  Single source of truth for the persistence model.
+//  Conventions: snake_case tables via @@map, cuid ids, UTC timestamps.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── Enums ─────────────────────────────────────
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+enum CharacterClass {
+  WARRIOR // discipline / fitness leaning
+  MAGE    // knowledge / study leaning
+  ROGUE   // finance / business leaning
+  RANGER  // balance / lifestyle leaning
+  PALADIN // leadership / social leaning
+}
+
+enum QuestCadence {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ONE_OFF
+}
+
+enum Difficulty {
+  TRIVIAL
+  EASY
+  MEDIUM
+  HARD
+  EPIC
+}
+
+enum QuestStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum CompletionSource {
+  MANUAL
+  TIMER
+  INTEGRATION // healthkit / google fit / etc.
+}
+
+enum Rarity {
+  BRONZE
+  SILVER
+  GOLD
+  LEGENDARY
+}
+
+enum BossStatus {
+  ACTIVE
+  DEFEATED
+  ABANDONED
+}
+
+enum ItemType {
+  COSMETIC_AVATAR
+  COSMETIC_THEME
+  COSMETIC_FRAME
+  TITLE
+  REWARD_COUPON
+  CONSUMABLE_STREAK_FREEZE
+  CONSUMABLE_ENERGY_POTION
+}
+
+enum GuildRole {
+  LEADER
+  OFFICER
+  MEMBER
+}
+
+enum PvpMetric {
+  XP
+  QUESTS_COMPLETED
+  STUDY_MINUTES
+  WORKOUT_MINUTES
+  STEPS
+}
+
+enum PvpStatus {
+  PENDING
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum BillingProvider {
+  STRIPE
+  APPLE_IAP
+  GOOGLE_PLAY
+}
+
+enum LedgerReason {
+  QUEST_REWARD
+  BOSS_REWARD
+  ACHIEVEMENT_REWARD
+  STREAK_MILESTONE
+  BATTLE_PASS
+  SHOP_PURCHASE
+  ADMIN_ADJUSTMENT
+  PVP_REWARD
+}
+
+// ─────────────────────────────── Identity ──────────────────────────────────
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  passwordHash  String?      @map("password_hash") // null for pure OAuth users
+  provider      AuthProvider @default(EMAIL)
+  providerId    String?      @map("provider_id")
+  emailVerified Boolean      @default(false) @map("email_verified")
+  isActive      Boolean      @default(true) @map("is_active")
+  lastLoginAt   DateTime?    @map("last_login_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  character           Character?
+  refreshTokens       RefreshToken[]
+  notificationTokens  NotificationToken[]
+  subscription        Subscription?
+  auditLogs           AuditLog[]
+
+  @@unique([provider, providerId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  tokenHash  String    @unique @map("token_hash")
+  userAgent  String?   @map("user_agent")
+  ip         String?
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model NotificationToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  fcmToken  String   @unique @map("fcm_token")
+  platform  String // ios | android
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notification_tokens")
+}
+
+// ─────────────────────────────── Character ─────────────────────────────────
+
+model Character {
+  id           String         @id @default(cuid())
+  userId       String         @unique @map("user_id")
+  name         String
+  avatarKey    String         @default("default") @map("avatar_key")
+  characterClass CharacterClass @default(RANGER) @map("class")
+
+  level        Int      @default(1)
+  xp           Int      @default(0) // xp within the current level
+  totalXp      BigInt   @default(0) @map("total_xp")
+  gold         Int      @default(0)
+  hp           Int      @default(100)
+  maxHp        Int      @default(100) @map("max_hp")
+  energy       Int      @default(100)
+  maxEnergy    Int      @default(100) @map("max_energy")
+  activeTitle  String?  @map("active_title")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills          Skill[]
+  quests          Quest[]
+  questCompletions QuestCompletion[]
+  bosses          Boss[]
+  achievements    CharacterAchievement[]
+  inventory       InventoryItem[]
+  shopRewards     ShopReward[]
+  streak          Streak?
+  goldLedger      GoldLedgerEntry[]
+  guildMembership GuildMember?
+  battlePass      BattlePassProgress[]
+
+  @@map("characters")
+}
+
+// ─────────────────────────────── Skills ────────────────────────────────────
+
+model Skill {
+  id          String   @id @default(cuid())
+  characterId String   @map("character_id")
+  key         String // programming | fitness | reading | english | business | finance | leadership | discipline
+  name        String
+  icon        String   @default("bolt")
+  color       String   @default("#7C5CFF")
+  level       Int      @default(1)
+  xp          Int      @default(0)
+  totalXp     BigInt   @default(0) @map("total_xp")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  character Character   @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  history   SkillXpEvent[]
+
+  @@unique([characterId, key])
+  @@index([characterId])
+  @@map("skills")
+}
+
+model SkillXpEvent {
+  id        String   @id @default(cuid())
+  skillId   String   @map("skill_id")
+  amount    Int
+  source    String // questId or "manual"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@index([skillId, createdAt])
+  @@map("skill_xp_events")
+}
+
+// ─────────────────────────────── Quests ────────────────────────────────────
+
+model Quest {
+  id           String       @id @default(cuid())
+  characterId  String       @map("character_id")
+  title        String
+  description  String?
+  cadence      QuestCadence @default(DAILY)
+  difficulty   Difficulty   @default(MEDIUM)
+  status       QuestStatus  @default(ACTIVE)
+
+  // rewards (base; scaled by difficulty at completion time)
+  xpReward     Int          @default(20) @map("xp_reward")
+  goldReward   Int          @default(10) @map("gold_reward")
+  skillKey     String?      @map("skill_key") // which skill gets XP
+  energyCost   Int          @default(10) @map("energy_cost")
+
+  // repeat rules for recurring quests
+  repeatRule   Json?        @map("repeat_rule") // { daysOfWeek:[1,3,5], dayOfMonth:1, ... }
+  dueAt        DateTime?    @map("due_at")
+
+  // linkage
+  bossId       String?      @map("boss_id")
+  damage       Int          @default(10) // damage dealt to boss on completion
+
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  archivedAt   DateTime?    @map("archived_at")
+
+  character   Character         @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  boss        Boss?             @relation(fields: [bossId], references: [id], onDelete: SetNull)
+  completions QuestCompletion[]
+
+  @@index([characterId, status])
+  @@index([characterId, cadence])
+  @@map("quests")
+}
+
+model QuestCompletion {
+  id           String           @id @default(cuid())
+  questId      String           @map("quest_id")
+  characterId  String           @map("character_id")
+  completedAt  DateTime         @default(now()) @map("completed_at")
+  periodKey    String           @map("period_key") // e.g. 2026-07-25 (daily) / 2026-W30 (weekly) / 2026-07 (monthly)
+  xpAwarded    Int              @map("xp_awarded")
+  goldAwarded  Int              @map("gold_awarded")
+  source       CompletionSource @default(MANUAL)
+
+  quest     Quest     @relation(fields: [questId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([questId, periodKey]) // idempotency: one completion per quest per period
+  @@index([characterId, completedAt])
+  @@map("quest_completions")
+}
+
+// ─────────────────────────────── Bosses ────────────────────────────────────
+
+model Boss {
+  id          String     @id @default(cuid())
+  characterId String     @map("character_id")
+  name        String
+  description String?
+  imageKey    String     @default("boss_default") @map("image_key")
+  maxHp       Int        @map("max_hp")
+  currentHp   Int        @map("current_hp")
+  status      BossStatus @default(ACTIVE)
+
+  rewardXp    Int        @default(500) @map("reward_xp")
+  rewardGold  Int        @default(250) @map("reward_gold")
+  rewardItemId String?   @map("reward_item_id")
+
+  deadline    DateTime?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  defeatedAt  DateTime?  @map("defeated_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  quests    Quest[]
+
+  @@index([characterId, status])
+  @@map("bosses")
+}
+
+// ─────────────────────────────── Achievements ──────────────────────────────
+
+model Achievement {
+  id          String   @id // stable slug, e.g. "first_blood"
+  name        String
+  description String
+  rarity      Rarity
+  icon        String
+  category    String // quests | skills | streaks | social | economy | meta
+  rewardXp    Int      @default(0) @map("reward_xp")
+  rewardGold  Int      @default(0) @map("reward_gold")
+  criteria    Json // machine-readable unlock rule, evaluated by the achievement engine
+  isSecret    Boolean  @default(false) @map("is_secret")
+
+  unlocks CharacterAchievement[]
+
+  @@map("achievements")
+}
+
+model CharacterAchievement {
+  id            String   @id @default(cuid())
+  characterId   String   @map("character_id")
+  achievementId String   @map("achievement_id")
+  progress      Float    @default(0) // 0..1 for tiered/progressive achievements
+  unlockedAt    DateTime? @map("unlocked_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  character   Character   @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, achievementId])
+  @@index([characterId])
+  @@map("character_achievements")
+}
+
+// ─────────────────────────────── Economy ───────────────────────────────────
+
+model InventoryItem {
+  id          String   @id @default(cuid())
+  characterId String   @map("character_id")
+  itemType    ItemType @map("item_type")
+  refKey      String   @map("ref_key") // catalog key of the cosmetic/title/coupon
+  name        String
+  quantity    Int      @default(1)
+  equipped    Boolean  @default(false)
+  metadata    Json?
+  acquiredAt  DateTime @default(now()) @map("acquired_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, itemType])
+  @@map("inventory_items")
+}
+
+model ShopReward {
+  id          String   @id @default(cuid())
+  characterId String   @map("character_id")
+  title       String // user-defined real-life reward, e.g. "1h gaming"
+  description String?
+  icon        String   @default("gift")
+  goldCost    Int      @map("gold_cost")
+  stock       Int?     // null = unlimited
+  timesRedeemed Int    @default(0) @map("times_redeemed")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, isActive])
+  @@map("shop_rewards")
+}
+
+model GoldLedgerEntry {
+  id          String       @id @default(cuid())
+  characterId String       @map("character_id")
+  delta       Int // +earned / -spent
+  balance     Int // running balance after this entry
+  reason      LedgerReason
+  refId       String?      @map("ref_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, createdAt])
+  @@map("gold_ledger_entries")
+}
+
+// ─────────────────────────────── Streaks ───────────────────────────────────
+
+model Streak {
+  id            String    @id @default(cuid())
+  characterId   String    @unique @map("character_id")
+  current       Int       @default(0)
+  longest       Int       @default(0)
+  freezeCount   Int       @default(0) @map("freeze_count")
+  lastActiveDay String?   @map("last_active_day") // YYYY-MM-DD in user's tz
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
+}
+
+// ─────────────────────────────── Guilds ────────────────────────────────────
+
+model Guild {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  tag         String   @unique // short 2-5 char tag
+  description String?
+  emblemKey   String   @default("emblem_default") @map("emblem_key")
+  xp          BigInt   @default(0)
+  level       Int      @default(1)
+  isPublic    Boolean  @default(true) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  members  GuildMember[]
+  missions GuildMission[]
+  messages GuildMessage[]
+
+  @@map("guilds")
+}
+
+model GuildMember {
+  id          String    @id @default(cuid())
+  guildId     String    @map("guild_id")
+  characterId String    @unique @map("character_id")
+  role        GuildRole @default(MEMBER)
+  weeklyXp    Int       @default(0) @map("weekly_xp")
+  joinedAt    DateTime  @default(now()) @map("joined_at")
+
+  guild     Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([guildId])
+  @@map("guild_members")
+}
+
+model GuildMission {
+  id          String    @id @default(cuid())
+  guildId     String    @map("guild_id")
+  title       String
+  targetValue Int       @map("target_value")
+  currentValue Int      @default(0) @map("current_value")
+  metric      PvpMetric @default(XP)
+  rewardGold  Int       @default(0) @map("reward_gold")
+  expiresAt   DateTime  @map("expires_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId])
+  @@map("guild_missions")
+}
+
+model GuildMessage {
+  id          String   @id @default(cuid())
+  guildId     String   @map("guild_id")
+  characterId String   @map("character_id")
+  body        String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, createdAt])
+  @@map("guild_messages")
+}
+
+// ─────────────────────────────── PvP ───────────────────────────────────────
+
+model PvpChallenge {
+  id           String    @id @default(cuid())
+  challengerId String    @map("challenger_id") // characterId
+  opponentId   String    @map("opponent_id")   // characterId
+  metric       PvpMetric
+  status       PvpStatus @default(PENDING)
+  startAt      DateTime  @map("start_at")
+  endAt        DateTime  @map("end_at")
+  challengerScore Int    @default(0) @map("challenger_score")
+  opponentScore   Int    @default(0) @map("opponent_score")
+  winnerId     String?   @map("winner_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([challengerId, status])
+  @@index([opponentId, status])
+  @@map("pvp_challenges")
+}
+
+// ─────────────────────────── Battle Pass & Billing ─────────────────────────
+
+model Season {
+  id        String   @id @default(cuid())
+  name      String
+  startAt   DateTime @map("start_at")
+  endAt     DateTime @map("end_at")
+  isActive  Boolean  @default(true) @map("is_active")
+
+  tiers    BattlePassTier[]
+  progress BattlePassProgress[]
+
+  @@map("seasons")
+}
+
+model BattlePassTier {
+  id          String  @id @default(cuid())
+  seasonId    String  @map("season_id")
+  tier        Int
+  xpRequired  Int     @map("xp_required")
+  freeReward  Json?   @map("free_reward")    // { type, refKey, amount }
+  premiumReward Json? @map("premium_reward")
+
+  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonId, tier])
+  @@map("battle_pass_tiers")
+}
+
+model BattlePassProgress {
+  id          String   @id @default(cuid())
+  characterId String   @map("character_id")
+  seasonId    String   @map("season_id")
+  xp          Int      @default(0)
+  tier        Int      @default(0)
+  isPremium   Boolean  @default(false) @map("is_premium")
+  claimedTiers Int[]   @default([]) @map("claimed_tiers")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  season    Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, seasonId])
+  @@map("battle_pass_progress")
+}
+
+model Subscription {
+  id            String             @id @default(cuid())
+  userId        String             @unique @map("user_id")
+  tier          SubscriptionTier   @default(FREE)
+  status        SubscriptionStatus @default(ACTIVE)
+  provider      BillingProvider?
+  externalId    String?            @map("external_id") // stripe sub id / original transaction id
+  currentPeriodEnd DateTime?       @map("current_period_end")
+  cancelAtPeriodEnd Boolean        @default(false) @map("cancel_at_period_end")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────── Audit ─────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  action    String
+  entity    String?
+  entityId  String?  @map("entity_id")
+  metadata  Json?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}

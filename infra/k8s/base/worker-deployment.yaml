@@ -1,0 +1,85 @@
+# ============================================================================
+#  Worker — BullMQ background processor (node dist/worker.js).
+#  Same image as the API, different entrypoint. No Service required (it has no
+#  inbound HTTP), but a headless one is included for future metrics scraping.
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/part-of: lifequest
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worker
+        app.kubernetes.io/part-of: lifequest
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ghcr.io/lifequest/api:latest
+          command: ["node", "dist/worker.js"]
+          envFrom:
+            - configMapRef:
+                name: lifequest-config
+            - secretRef:
+                name: lifequest-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "192Mi"
+            limits:
+              cpu: "750m"
+              memory: "512Mi"
+          # Liveness via a process check — the worker exposes no HTTP port.
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pgrep -f dist/worker.js > /dev/null"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Optional headless service (metrics / future scraping). No cluster IP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker
+  labels:
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/part-of: lifequest
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: worker
+  ports:
+    - name: metrics
+      port: 9464
+      targetPort: 9464

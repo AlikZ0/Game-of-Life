@@ -67,7 +67,9 @@ export class NotificationsService {
    * activity patterns and enqueues a delayed job that calls {@link send}.
    */
   scheduleSmartReminder(userId: string): void {
-    this.logger.debug(`scheduleSmartReminder queued for ${userId} (worker TODO)`);
+    this.logger.debug(
+      `scheduleSmartReminder queued for ${userId} (worker TODO)`,
+    );
     // Implemented by the background worker: analyse the user's active hours and
     // enqueue a delayed BullMQ job to fire a personalised reminder push.
   }

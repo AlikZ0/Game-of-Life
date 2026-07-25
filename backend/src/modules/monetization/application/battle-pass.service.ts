@@ -9,7 +9,7 @@ import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { CharacterService } from '../../character/application/character.service';
 
 /** Shape stored in BattlePassTier.freeReward / premiumReward JSON columns. */
-interface TierReward {
+export interface TierReward {
   type: 'xp' | 'gold' | 'item';
   refKey?: string;
   amount: number;
@@ -40,7 +40,12 @@ export class BattlePassService {
     ]);
 
     return {
-      season: { id: season.id, name: season.name, startAt: season.startAt, endAt: season.endAt },
+      season: {
+        id: season.id,
+        name: season.name,
+        startAt: season.startAt,
+        endAt: season.endAt,
+      },
       tiers,
       progress: {
         xp: progress.xp,
@@ -80,7 +85,9 @@ export class BattlePassService {
       reward = premium ?? free;
     } else {
       if (premium && !free) {
-        throw new ForbiddenException('Premium pass required to claim this tier');
+        throw new ForbiddenException(
+          'Premium pass required to claim this tier',
+        );
       }
       reward = free;
     }

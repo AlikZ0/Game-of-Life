@@ -26,9 +26,7 @@ export class PrismaCharacterRepository implements CharacterRepository {
     return this.prisma.character.update({ where: { id }, data });
   }
 
-  transaction<T>(
-    fn: (tx: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  transaction<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.prisma.$transaction(fn);
   }
 }

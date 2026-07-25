@@ -41,10 +41,7 @@ export class PvpController {
 
   @Post(':id/accept')
   @ApiOperation({ summary: 'Accept a pending challenge (opponent only)' })
-  async accept(
-    @CurrentUser('userId') userId: string,
-    @Param('id') id: string,
-  ) {
+  async accept(@CurrentUser('userId') userId: string, @Param('id') id: string) {
     return this.pvp.accept(await this.characterId(userId), id);
   }
 

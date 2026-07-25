@@ -11,7 +11,9 @@ export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
 
   @Post('token')
-  @ApiOperation({ summary: 'Register a device FCM token for push notifications' })
+  @ApiOperation({
+    summary: 'Register a device FCM token for push notifications',
+  })
   async registerToken(
     @CurrentUser('userId') userId: string,
     @Body() dto: RegisterTokenDto,

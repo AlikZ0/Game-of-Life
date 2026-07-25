@@ -64,7 +64,7 @@ class _QuestEditSheetState extends ConsumerState<QuestEditSheet> {
     final controller = ref.read(questsControllerProvider.notifier);
     try {
       if (draft.isEditing) {
-        await controller.update(draft);
+        await controller.saveQuest(draft);
       } else {
         await controller.create(draft);
       }

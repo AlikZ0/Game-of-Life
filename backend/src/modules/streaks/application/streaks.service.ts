@@ -63,7 +63,10 @@ export class StreaksService {
 
     if (streak.lastActiveDay === yesterday || streak.lastActiveDay === null) {
       current += 1;
-    } else if (this.isGapOfOne(streak.lastActiveDay, today) && freezeCount > 0) {
+    } else if (
+      this.isGapOfOne(streak.lastActiveDay, today) &&
+      freezeCount > 0
+    ) {
       // A single missed day is absorbed by a streak freeze.
       freezeCount -= 1;
       current += 1;
@@ -89,8 +92,7 @@ export class StreaksService {
 
   private isGapOfOne(last: string | null, today: string): boolean {
     if (!last) return false;
-    const diff =
-      (Date.parse(today) - Date.parse(last)) / 86400000;
+    const diff = (Date.parse(today) - Date.parse(last)) / 86400000;
     return diff === 2; // exactly one full day skipped
   }
 

@@ -1,4 +1,9 @@
-import { applyXp, cumulativeXpForLevel, levelProgress, xpForLevel } from './leveling';
+import {
+  applyXp,
+  cumulativeXpForLevel,
+  levelProgress,
+  xpForLevel,
+} from './leveling';
 
 describe('leveling', () => {
   it('produces a strictly increasing, super-linear curve', () => {

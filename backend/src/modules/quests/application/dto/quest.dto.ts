@@ -1,8 +1,4 @@
-import {
-  ApiProperty,
-  ApiPropertyOptional,
-  PartialType,
-} from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Difficulty, QuestCadence } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
@@ -35,7 +31,10 @@ export class CreateQuestDto {
   @IsEnum(Difficulty)
   difficulty: Difficulty = Difficulty.MEDIUM;
 
-  @ApiPropertyOptional({ example: 'programming', description: 'Skill to award XP to' })
+  @ApiPropertyOptional({
+    example: 'programming',
+    description: 'Skill to award XP to',
+  })
   @IsOptional()
   @IsString()
   skillKey?: string;
@@ -61,7 +60,9 @@ export class CreateQuestDto {
   @Min(0)
   energyCost?: number;
 
-  @ApiPropertyOptional({ description: 'Link this quest to a boss to deal damage' })
+  @ApiPropertyOptional({
+    description: 'Link this quest to a boss to deal damage',
+  })
   @IsOptional()
   @IsString()
   bossId?: string;

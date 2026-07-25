@@ -9,7 +9,12 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { QuestCadence } from '@prisma/client';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { QuestsService } from '../application/quests.service';

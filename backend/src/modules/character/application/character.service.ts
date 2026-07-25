@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Character, LedgerReason, Prisma } from '@prisma/client';
+import { Character, LedgerReason } from '@prisma/client';
 import {
   applyXp,
   levelProgress,

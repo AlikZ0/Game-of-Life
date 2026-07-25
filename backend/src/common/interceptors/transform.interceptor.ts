@@ -17,9 +17,10 @@ export interface ApiEnvelope<T> {
  * Paginated responses may already carry their own `meta`; those pass through.
  */
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, ApiEnvelope<T>>
-{
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  ApiEnvelope<T>
+> {
   intercept(
     _context: ExecutionContext,
     next: CallHandler,

@@ -58,10 +58,7 @@ export class EconomyController {
 
   @Post('shop/:id/redeem')
   @ApiOperation({ summary: 'Spend gold to redeem a reward → inventory coupon' })
-  async redeem(
-    @CurrentUser('userId') userId: string,
-    @Param('id') id: string,
-  ) {
+  async redeem(@CurrentUser('userId') userId: string, @Param('id') id: string) {
     return this.economy.redeem(await this.characterId(userId), id);
   }
 
@@ -78,6 +75,10 @@ export class EconomyController {
     @Param('id') id: string,
     @Body('equipped') equipped: boolean,
   ) {
-    return this.economy.equip(await this.characterId(userId), id, equipped ?? true);
+    return this.economy.equip(
+      await this.characterId(userId),
+      id,
+      equipped ?? true,
+    );
   }
 }

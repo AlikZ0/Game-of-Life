@@ -102,7 +102,9 @@ export class AiCoachService {
       series.reduce((s, p) => s + p.xp, 0) / Math.max(series.length, 1);
     // ~ how many levels the projected 30-day XP roughly buys (heuristic).
     const projectedXp = avgDaily * 30;
-    const levelsGained = Math.floor(projectedXp / (100 * Math.sqrt(currentLevel)));
+    const levelsGained = Math.floor(
+      projectedXp / (100 * Math.sqrt(currentLevel)),
+    );
     return currentLevel + Math.max(0, levelsGained);
   }
 

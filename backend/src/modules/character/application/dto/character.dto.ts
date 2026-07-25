@@ -1,12 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CharacterClass } from '@prisma/client';
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  Length,
-  Matches,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString, Length, Matches } from 'class-validator';
 
 export class CreateCharacterDto {
   @ApiProperty({ example: 'Aria the Bold', minLength: 2, maxLength: 24 })

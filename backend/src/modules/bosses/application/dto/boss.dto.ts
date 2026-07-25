@@ -1,12 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsInt,
-  IsOptional,
-  IsString,
-  Length,
-  Min,
-} from 'class-validator';
+import { IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
 
 export class CreateBossDto {
   @ApiProperty({ example: 'Ship the App to the App Store' })
@@ -20,7 +14,10 @@ export class CreateBossDto {
   @Length(0, 500)
   description?: string;
 
-  @ApiProperty({ example: 500, description: 'Total HP — sum of expected quest damage' })
+  @ApiProperty({
+    example: 500,
+    description: 'Total HP — sum of expected quest damage',
+  })
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -52,10 +49,12 @@ export class BossResponseDto {
   @ApiPropertyOptional() description?: string | null;
   @ApiProperty() maxHp!: number;
   @ApiProperty() currentHp!: number;
-  @ApiProperty({ description: '0..1 remaining HP fraction' }) hpFraction!: number;
+  @ApiProperty({ description: '0..1 remaining HP fraction' })
+  hpFraction!: number;
   @ApiProperty() status!: string;
   @ApiProperty() rewardXp!: number;
   @ApiProperty() rewardGold!: number;
   @ApiPropertyOptional() deadline?: Date | null;
-  @ApiProperty({ description: 'Quests linked to this boss' }) linkedQuests!: number;
+  @ApiProperty({ description: 'Quests linked to this boss' })
+  linkedQuests!: number;
 }

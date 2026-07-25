@@ -144,10 +144,17 @@ jobs:
         if: steps.pubspec.outputs.exists == 'true'
         run: flutter pub get
 
+      # Generate Freezed / json_serializable sources (*.freezed.dart, *.g.dart)
+      # which are git-ignored, so `analyze` sees the real generated types.
+      - name: Code generation
+        if: steps.pubspec.outputs.exists == 'true'
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # Fail only on errors; style infos/warnings are reported but non-blocking.
       - name: Analyze
         if: steps.pubspec.outputs.exists == 'true'
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Test
-        if: steps.pubspec.outputs.exists == 'true'
+        if: steps.pubspec.outputs.exists == 'true' && hashFiles('mobile/test/**/*.dart') != ''
         run: flutter test

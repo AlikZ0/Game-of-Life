@@ -52,7 +52,9 @@ export class PvpService {
     });
     if (!challenge) throw new NotFoundException('Challenge not found');
     if (challenge.opponentId !== characterId) {
-      throw new ForbiddenException('Only the opponent can accept this challenge');
+      throw new ForbiddenException(
+        'Only the opponent can accept this challenge',
+      );
     }
     if (challenge.status !== PvpStatus.PENDING) {
       throw new BadRequestException('Challenge is no longer pending');

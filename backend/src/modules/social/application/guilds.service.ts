@@ -58,7 +58,9 @@ export class GuildsService {
       where: { id },
       include: {
         members: {
-          include: { character: { select: { id: true, name: true, level: true } } },
+          include: {
+            character: { select: { id: true, name: true, level: true } },
+          },
           orderBy: { weeklyXp: 'desc' },
         },
         _count: { select: { members: true } },
@@ -70,7 +72,9 @@ export class GuildsService {
 
   /** Join a guild, rejecting characters that already belong to one. */
   async join(characterId: string, guildId: string) {
-    const guild = await this.prisma.guild.findUnique({ where: { id: guildId } });
+    const guild = await this.prisma.guild.findUnique({
+      where: { id: guildId },
+    });
     if (!guild) throw new NotFoundException('Guild not found');
 
     const existing = await this.prisma.guildMember.findUnique({
@@ -102,7 +106,9 @@ export class GuildsService {
       where: { guildId },
       orderBy: { weeklyXp: 'desc' },
       include: {
-        character: { select: { id: true, name: true, level: true, avatarKey: true } },
+        character: {
+          select: { id: true, name: true, level: true, avatarKey: true },
+        },
       },
     });
   }
@@ -116,7 +122,11 @@ export class GuildsService {
     return messages.reverse(); // chronological for the client
   }
 
-  async postMessage(characterId: string, guildId: string, dto: GuildMessageDto) {
+  async postMessage(
+    characterId: string,
+    guildId: string,
+    dto: GuildMessageDto,
+  ) {
     await this.assertMember(characterId, guildId);
     return this.prisma.guildMessage.create({
       data: { guildId, characterId, body: dto.body },

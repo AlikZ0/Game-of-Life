@@ -14,7 +14,10 @@ export interface CreateUserData {
 export interface UserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
-  findByProvider(provider: AuthProvider, providerId: string): Promise<User | null>;
+  findByProvider(
+    provider: AuthProvider,
+    providerId: string,
+  ): Promise<User | null>;
   create(data: CreateUserData): Promise<User>;
   markLoggedIn(id: string): Promise<void>;
 }

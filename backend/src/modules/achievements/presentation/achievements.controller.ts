@@ -20,7 +20,9 @@ export class AchievementsController {
   }
 
   @Post('evaluate')
-  @ApiOperation({ summary: 'Re-check and unlock any newly earned achievements' })
+  @ApiOperation({
+    summary: 'Re-check and unlock any newly earned achievements',
+  })
   async evaluate(@CurrentUser('characterId') characterId: string) {
     return this.achievements.evaluate(characterId);
   }

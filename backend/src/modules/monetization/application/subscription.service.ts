@@ -37,7 +37,9 @@ export class SubscriptionService {
 
   /** Current subscription for a user (defaults to FREE / ACTIVE if none). */
   async getStatus(userId: string) {
-    const sub = await this.prisma.subscription.findUnique({ where: { userId } });
+    const sub = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
     return {
       tier: sub?.tier ?? SubscriptionTier.FREE,
       status: sub?.status ?? SubscriptionStatus.ACTIVE,
@@ -48,7 +50,9 @@ export class SubscriptionService {
 
   /** True when the user holds an active Premium subscription. */
   async isPremium(userId: string): Promise<boolean> {
-    const sub = await this.prisma.subscription.findUnique({ where: { userId } });
+    const sub = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
     return (
       !!sub &&
       sub.tier === SubscriptionTier.PREMIUM &&
@@ -99,7 +103,9 @@ export class SubscriptionService {
    */
   async handleWebhook(rawBody: Buffer | string, signature?: string) {
     if (!this.stripe) {
-      this.logger.warn('Received webhook but Stripe is not configured — ignoring');
+      this.logger.warn(
+        'Received webhook but Stripe is not configured — ignoring',
+      );
       return { received: true, handled: false };
     }
 
@@ -110,11 +116,15 @@ export class SubscriptionService {
         event = this.stripe.webhooks.constructEvent(rawBody, signature, secret);
       } else {
         event = (
-          typeof rawBody === 'string' ? JSON.parse(rawBody) : JSON.parse(rawBody.toString())
+          typeof rawBody === 'string'
+            ? JSON.parse(rawBody)
+            : JSON.parse(rawBody.toString())
         ) as Stripe.Event;
       }
     } catch (err) {
-      this.logger.error(`Webhook signature verification failed: ${String(err)}`);
+      this.logger.error(
+        `Webhook signature verification failed: ${String(err)}`,
+      );
       return { received: true, handled: false };
     }
 

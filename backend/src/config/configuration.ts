@@ -61,7 +61,9 @@ export default (): Configuration => ({
     env: process.env.NODE_ENV ?? 'development',
     port: toInt(process.env.PORT, 3000),
     apiPrefix: process.env.API_PREFIX ?? 'api/v1',
-    corsOrigins: (process.env.CORS_ORIGINS ?? '*').split(',').map((s) => s.trim()),
+    corsOrigins: (process.env.CORS_ORIGINS ?? '*')
+      .split(',')
+      .map((s) => s.trim()),
     logLevel: process.env.LOG_LEVEL ?? 'info',
   },
   database: {

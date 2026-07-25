@@ -8,7 +8,10 @@ import { QuestCadence } from '@prisma/client';
  *   MONTHLY -> 2026-07
  *   ONE_OFF -> once       (a quest can be completed exactly one time)
  */
-export function periodKeyFor(cadence: QuestCadence, at: Date = new Date()): string {
+export function periodKeyFor(
+  cadence: QuestCadence,
+  at: Date = new Date(),
+): string {
   switch (cadence) {
     case 'DAILY':
       return at.toISOString().slice(0, 10);

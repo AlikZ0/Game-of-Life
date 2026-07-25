@@ -47,10 +47,7 @@ export class BossesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single boss with HP + linked quest count' })
-  async get(
-    @CurrentUser('userId') userId: string,
-    @Param('id') id: string,
-  ) {
+  async get(@CurrentUser('userId') userId: string, @Param('id') id: string) {
     return this.bosses.get(await this.characterId(userId), id);
   }
 }

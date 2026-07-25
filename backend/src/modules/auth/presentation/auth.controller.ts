@@ -27,7 +27,10 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'Create an account with email + password' })
-  register(@Body() dto: RegisterDto, @Req() req: Request): Promise<AuthTokensDto> {
+  register(
+    @Body() dto: RegisterDto,
+    @Req() req: Request,
+  ): Promise<AuthTokensDto> {
     return this.auth.register(dto.email, dto.password, this.ctx(req));
   }
 
@@ -55,7 +58,10 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @ApiOperation({ summary: 'Exchange a refresh token for a new token pair' })
-  refresh(@Body() dto: RefreshDto, @Req() req: Request): Promise<AuthTokensDto> {
+  refresh(
+    @Body() dto: RefreshDto,
+    @Req() req: Request,
+  ): Promise<AuthTokensDto> {
     return this.auth.refresh(dto.refreshToken, this.ctx(req));
   }
 

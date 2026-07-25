@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Headers,
-  Post,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Headers, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
@@ -34,7 +28,9 @@ export class SubscriptionController {
 
   @Public()
   @Post('webhook')
-  @ApiOperation({ summary: 'Stripe billing webhook (public, signature-verified)' })
+  @ApiOperation({
+    summary: 'Stripe billing webhook (public, signature-verified)',
+  })
   async webhook(
     @Req() req: Request,
     @Headers('stripe-signature') signature?: string,

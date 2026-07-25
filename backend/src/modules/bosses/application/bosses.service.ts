@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Boss, LedgerReason, Prisma } from '@prisma/client';
+import { Boss, LedgerReason } from '@prisma/client';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { CharacterService } from '../../character/application/character.service';
 import { BossResponseDto, CreateBossDto } from './dto/boss.dto';
@@ -22,7 +22,10 @@ export class BossesService {
     private readonly characters: CharacterService,
   ) {}
 
-  async create(characterId: string, dto: CreateBossDto): Promise<BossResponseDto> {
+  async create(
+    characterId: string,
+    dto: CreateBossDto,
+  ): Promise<BossResponseDto> {
     const boss = await this.prisma.boss.create({
       data: {
         characterId,

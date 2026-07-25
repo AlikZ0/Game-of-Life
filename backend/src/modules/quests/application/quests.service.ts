@@ -42,10 +42,7 @@ export class QuestsService {
     return c.id;
   }
 
-  async create(
-    userId: string,
-    dto: CreateQuestDto,
-  ): Promise<QuestResponseDto> {
+  async create(userId: string, dto: CreateQuestDto): Promise<QuestResponseDto> {
     const characterId = await this.characterId(userId);
     const quest = await this.quests.create({
       characterId,
@@ -199,7 +196,10 @@ export class QuestsService {
     };
   }
 
-  private async assertOwnership(userId: string, questId: string): Promise<void> {
+  private async assertOwnership(
+    userId: string,
+    questId: string,
+  ): Promise<void> {
     const characterId = await this.characterId(userId);
     const quest = await this.quests.findById(questId);
     if (!quest) throw new NotFoundException('Quest not found');

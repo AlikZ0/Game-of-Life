@@ -80,7 +80,7 @@ class QuestsController extends AsyncNotifier<List<Quest>> {
     );
   }
 
-  Future<void> update(QuestDraft draft) async {
+  Future<void> saveQuest(QuestDraft draft) async {
     final result = await _repo.updateQuest(draft);
     result.fold(
       onSuccess: (updated) {

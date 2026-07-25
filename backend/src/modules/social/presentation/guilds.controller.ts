@@ -51,19 +51,13 @@ export class GuildsController {
 
   @Post(':id/join')
   @ApiOperation({ summary: 'Join a guild' })
-  async join(
-    @CurrentUser('userId') userId: string,
-    @Param('id') id: string,
-  ) {
+  async join(@CurrentUser('userId') userId: string, @Param('id') id: string) {
     return this.guilds.join(await this.characterId(userId), id);
   }
 
   @Post(':id/leave')
   @ApiOperation({ summary: 'Leave a guild' })
-  async leave(
-    @CurrentUser('userId') userId: string,
-    @Param('id') id: string,
-  ) {
+  async leave(@CurrentUser('userId') userId: string, @Param('id') id: string) {
     return this.guilds.leave(await this.characterId(userId), id);
   }
 

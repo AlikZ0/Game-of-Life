@@ -41,7 +41,7 @@ class ApiException implements Exception {
       case DioExceptionType.cancel:
         return const ApiException(message: 'Request cancelled.');
       case DioExceptionType.badCertificate:
-      case DioExceptionType.unknown:
+      default: // unknown, transformTimeout, and any future Dio error types
         return ApiException(message: e.message ?? 'Something went wrong.');
     }
   }
@@ -76,16 +76,19 @@ class ApiException implements Exception {
     return ApiException(message: _defaultFor(status), statusCode: status);
   }
 
-  static String _defaultFor(int? status) => switch (status) {
-        400 => 'That request was invalid.',
-        401 => 'Your session expired. Please sign in again.',
-        403 => "You don't have access to that.",
-        404 => "We couldn't find what you were looking for.",
-        409 => 'That conflicts with something that already exists.',
-        429 => 'Too many requests — slow down a moment.',
-        >= 500 => 'Our servers hit a snag. Please try again shortly.',
-        _ => 'Something went wrong.',
-      };
+  static String _defaultFor(int? status) {
+    if (status == null) return 'Something went wrong.';
+    return switch (status) {
+      400 => 'That request was invalid.',
+      401 => 'Your session expired. Please sign in again.',
+      403 => "You don't have access to that.",
+      404 => "We couldn't find what you were looking for.",
+      409 => 'That conflicts with something that already exists.',
+      429 => 'Too many requests — slow down a moment.',
+      >= 500 => 'Our servers hit a snag. Please try again shortly.',
+      _ => 'Something went wrong.',
+    };
+  }
 
   @override
   String toString() => 'ApiException($statusCode, $code): $message';

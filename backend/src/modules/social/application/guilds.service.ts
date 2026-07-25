@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Guild, GuildRole, PvpMetric } from '@prisma/client';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import {
   CreateGuildDto,
   CreateGuildMissionDto,
@@ -13,6 +14,7 @@ import {
 } from './dto/guild.dto';
 
 const WEEK_MS = 7 * 86400000;
+const LEADERBOARD_SIZE = 10;
 
 /**
  * Guilds are cooperative clans: characters join a single guild, chat, climb the
@@ -21,7 +23,10 @@ const WEEK_MS = 7 * 86400000;
  */
 @Injectable()
 export class GuildsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
 
   /** Create a guild; the creator is enrolled as its LEADER. */
   async create(characterId: string, dto: CreateGuildDto) {
@@ -128,8 +133,58 @@ export class GuildsService {
     dto: GuildMessageDto,
   ) {
     await this.assertMember(characterId, guildId);
-    return this.prisma.guildMessage.create({
+    const message = await this.prisma.guildMessage.create({
       data: { guildId, characterId, body: dto.body },
+    });
+    // Fan the message out to everyone currently in the guild room.
+    this.realtime.emitGuildMessage(guildId, {
+      id: message.id,
+      characterId,
+      body: message.body,
+      createdAt: message.createdAt.toISOString(),
+    });
+    return message;
+  }
+
+  /**
+   * Credit a member's weekly XP (called from the completion flow) and push the
+   * refreshed top-N leaderboard to the guild room in real time. Best-effort and
+   * a no-op for characters that aren't in a guild.
+   */
+  async recordWeeklyXp(characterId: string, xp: number): Promise<void> {
+    if (xp <= 0) return;
+    const member = await this.prisma.guildMember.findUnique({
+      where: { characterId },
+      select: { guildId: true },
+    });
+    if (!member) return;
+
+    await this.prisma.$transaction([
+      this.prisma.guildMember.update({
+        where: { characterId },
+        data: { weeklyXp: { increment: xp } },
+      }),
+      this.prisma.guild.update({
+        where: { id: member.guildId },
+        data: { xp: { increment: BigInt(xp) } },
+      }),
+    ]);
+
+    const top = await this.prisma.guildMember.findMany({
+      where: { guildId: member.guildId },
+      orderBy: { weeklyXp: 'desc' },
+      take: LEADERBOARD_SIZE,
+      include: { character: { select: { id: true, name: true, level: true } } },
+    });
+    this.realtime.emitLeaderboardUpdate(member.guildId, {
+      guildId: member.guildId,
+      standings: top.map((m, i) => ({
+        rank: i + 1,
+        characterId: m.characterId,
+        name: m.character.name,
+        level: m.character.level,
+        weeklyXp: m.weeklyXp,
+      })),
     });
   }
 

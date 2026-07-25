@@ -21,6 +21,7 @@ import {
   streakMultiplier,
 } from '../../gamification/domain/rewards';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
+import { GuildsService } from '../../social/application/guilds.service';
 import { StreaksService } from '../../streaks/application/streaks.service';
 import { QUEST_REPOSITORY, QuestRepository } from '../domain/quest.repository';
 import {
@@ -39,6 +40,7 @@ export class QuestsService {
     private readonly bosses: BossesService,
     private readonly streaks: StreaksService,
     private readonly realtime: RealtimeGateway,
+    private readonly guilds: GuildsService,
     @InjectQueue(GAMIFICATION_QUEUE)
     private readonly gamificationQueue: Queue<GamificationJob>,
   ) {}
@@ -205,6 +207,10 @@ export class QuestsService {
     }
     // …and evaluate achievements off the request path (best-effort).
     await this.enqueueAchievementEvaluation(characterId);
+    // Credit the player's guild weekly leaderboard (no-op if not in a guild).
+    await this.guilds
+      .recordWeeklyXp(characterId, reward.xp)
+      .catch(() => undefined);
 
     return {
       questId: quest.id,

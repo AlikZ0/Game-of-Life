@@ -57,6 +57,9 @@ describe('QuestsService.complete side-effects', () => {
         .fn()
         .mockResolvedValue({ current: 1, bonusGold: 0 }),
     };
+    const guilds = {
+      recordWeeklyXp: jest.fn().mockResolvedValue(undefined),
+    };
 
     const service = new QuestsService(
       quests as never,
@@ -65,9 +68,10 @@ describe('QuestsService.complete side-effects', () => {
       bosses as never,
       streaks as never,
       realtime as never,
+      guilds as never,
       queue as never,
     );
-    return { service, realtime, queue, characters, bosses };
+    return { service, realtime, queue, characters, bosses, guilds };
   }
 
   it('emits level-up when the character gains a level', async () => {

@@ -20,6 +20,7 @@ import {
   computeReward,
   streakMultiplier,
 } from '../../gamification/domain/rewards';
+import { BattlePassService } from '../../monetization/application/battle-pass.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { GuildsService } from '../../social/application/guilds.service';
 import { StreaksService } from '../../streaks/application/streaks.service';
@@ -41,6 +42,7 @@ export class QuestsService {
     private readonly streaks: StreaksService,
     private readonly realtime: RealtimeGateway,
     private readonly guilds: GuildsService,
+    private readonly battlePass: BattlePassService,
     @InjectQueue(GAMIFICATION_QUEUE)
     private readonly gamificationQueue: Queue<GamificationJob>,
   ) {}
@@ -211,6 +213,8 @@ export class QuestsService {
     await this.guilds
       .recordWeeklyXp(characterId, reward.xp)
       .catch(() => undefined);
+    // Advance the seasonal Battle Pass (no-op when no season is active).
+    await this.battlePass.addXp(characterId, reward.xp).catch(() => undefined);
 
     return {
       questId: quest.id,

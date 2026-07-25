@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Difficulty, QuestCadence } from '@prisma/client';
+import { SubscriptionService } from '../../monetization/application/subscription.service';
 import { StatsService } from '../../stats/application/stats.service';
 
 export interface SuggestedQuest {
@@ -17,6 +18,8 @@ export interface CoachAnalysis {
   strengths: string[];
   suggestedQuests: SuggestedQuest[];
   predictedLevelIn30d: number | null;
+  /** Whether the richer LLM-personalised coaching is unlocked for this user. */
+  premium: boolean;
 }
 
 /**
@@ -31,13 +34,15 @@ export class AiCoachService {
   constructor(
     private readonly stats: StatsService,
     private readonly config: ConfigService,
+    private readonly subscriptions: SubscriptionService,
   ) {}
 
   async analyze(userId: string): Promise<CoachAnalysis> {
-    const [balance, dashboard, series] = await Promise.all([
+    const [balance, dashboard, series, premium] = await Promise.all([
       this.stats.lifeBalance(userId),
       this.stats.dashboard(userId),
       this.stats.xpSeries(userId, 14),
+      this.subscriptions.isPremium(userId),
     ]);
 
     const weak = balance.filter((b) => b.neglected).map((b) => b.name);
@@ -46,12 +51,13 @@ export class AiCoachService {
     const suggestedQuests = this.suggestQuests(balance);
     const predictedLevelIn30d = this.predictLevel(dashboard.level, series);
 
-    const summary = this.buildSummary(dashboard, weak, strengths);
+    let summary = this.buildSummary(dashboard, weak, strengths);
 
-    // Premium: enrich via LLM when configured (non-blocking design in prod —
-    // here we simply annotate that the richer path is available).
-    if (this.config.get<string>('ai.apiKey')) {
-      // await this.llm.enrich(...) — implemented behind the Premium gate.
+    // LLM enrichment is a Premium perk: only run it for subscribers, and only
+    // when an AI provider key is configured. Free users get the (still useful)
+    // rule-based summary above.
+    if (premium && this.config.get<string>('ai.apiKey')) {
+      summary = await this.enrichWithLlm(summary).catch(() => summary);
     }
 
     return {
@@ -60,7 +66,19 @@ export class AiCoachService {
       strengths,
       suggestedQuests,
       predictedLevelIn30d,
+      premium,
     };
+  }
+
+  /**
+   * Placeholder for the Premium LLM path. In production this calls the configured
+   * provider (see AI_PROVIDER/AI_MODEL) to rewrite the summary into personalised,
+   * empathetic coaching. Kept behind the Premium gate and a try/catch so it can
+   * never break the free rule-based analysis.
+   */
+  private async enrichWithLlm(baseSummary: string): Promise<string> {
+    // TODO: call the AI provider with the user's (anonymised) stats + baseSummary.
+    return baseSummary;
   }
 
   /** Generate personalised quests biased toward neglected skills. */

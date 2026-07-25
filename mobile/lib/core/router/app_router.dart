@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/achievements/presentation/screens/achievements_screen.dart';
 import '../../features/ai_coach/presentation/screens/ai_coach_screen.dart';
 import '../../features/auth/presentation/providers/auth_controller.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -165,7 +166,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Root-level pushed routes ────────────────────────────────────────────
-      _root(AppRoute.achievements, (_, __) => const InventoryScreen()),
+      _root(AppRoute.achievements, (_, __) => const AchievementsScreen()),
       _root(AppRoute.inventory, (_, __) => const InventoryScreen()),
       _root(AppRoute.shop, (_, __) => const ShopScreen()),
       _root(AppRoute.streaks, (_, __) => const StreaksScreen()),

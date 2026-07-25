@@ -24,14 +24,14 @@ class LocalStore {
     return LocalStore._(prefs, cache);
   }
 
-  // ── Preferences ─────────────────────────────────────────────────────────��
+  // - Preferences -
   bool get onboardingSeen => _prefs.get(kOnboardingSeen, defaultValue: false) as bool;
   Future<void> setOnboardingSeen(bool value) => _prefs.put(kOnboardingSeen, value);
 
   String get themeMode => _prefs.get(kThemeMode, defaultValue: 'system') as String;
   Future<void> setThemeMode(String value) => _prefs.put(kThemeMode, value);
 
-  // ── Cache ───────────────────────────────────────────────────────────────��
+  // - Cache -
   Map<String, dynamic>? get cachedCharacter {
     final raw = _cache.get(kCachedCharacter);
     return raw == null ? null : Map<String, dynamic>.from(raw as Map);

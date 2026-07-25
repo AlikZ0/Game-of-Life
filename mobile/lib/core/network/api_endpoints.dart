@@ -5,7 +5,7 @@
 abstract final class ApiEndpoints {
   const ApiEndpoints._();
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // - Auth -
   static const String login = '/auth/login';
   static const String register = '/auth/register';
   static const String refresh = '/auth/refresh';
@@ -14,39 +14,39 @@ abstract final class ApiEndpoints {
   static const String oauthApple = '/auth/oauth/apple';
   static const String me = '/auth/me';
 
-  // ── Character ───────────────────────────────────────────────────────────��─
+  // - Character -
   static const String characterMe = '/characters/me';
   static const String createCharacter = '/characters';
   static String character(String id) => '/characters/$id';
 
-  // ── Quests ──────────────────────────────────────────────────────────────��─
+  // - Quests -
   static const String quests = '/quests';
   static String quest(String id) => '/quests/$id';
   static String completeQuest(String id) => '/quests/$id/complete';
 
-  // ── Skills ──────────────────────────────────────────────────────────────��─
+  // - Skills -
   static const String skills = '/skills';
   static String skill(String id) => '/skills/$id';
   static String skillHistory(String id) => '/skills/$id/history';
 
-  // ── Bosses ──────────────────────────────────────────────────────────────��─
+  // - Bosses -
   static const String bosses = '/bosses';
   static String boss(String id) => '/bosses/$id';
   static String bossQuests(String id) => '/bosses/$id/quests';
 
-  // ── Achievements ────────────────────────────────────────────────────────��─
+  // - Achievements -
   static const String achievements = '/achievements';
 
-  // ── Economy ─────────────────────────────────────────────────────────────��─
+  // - Economy -
   static const String inventory = '/inventory';
   static const String shop = '/shop/rewards';
   static String redeemReward(String id) => '/shop/rewards/$id/redeem';
   static const String goldLedger = '/economy/ledger';
 
-  // ── Streaks ─────────────────────────────────────────────────────────────��─
+  // - Streaks -
   static const String streak = '/streaks/me';
 
-  // ── Social ──────────────────────────────────────────────────────────────��─
+  // - Social -
   static const String guildMe = '/guilds/me';
   static String guild(String id) => '/guilds/$id';
   static String guildMessages(String id) => '/guilds/$id/messages';
@@ -55,12 +55,12 @@ abstract final class ApiEndpoints {
   static const String pvpChallenges = '/pvp/challenges';
   static String pvpChallenge(String id) => '/pvp/challenges/$id';
 
-  // ── Insight ─────────────────────────────────────────────────────────────��─
+  // - Insight -
   static const String statsSummary = '/stats/summary';
   static const String statsXpSeries = '/stats/xp-series';
   static const String coachSuggestions = '/coach/suggestions';
 
-  // ── Monetization ──────────────────────────────────────────────────────────
+  // - Monetization -
   static const String battlePass = '/battle-pass/current';
   static String claimBattlePassTier(int tier) => '/battle-pass/claim/$tier';
   static const String subscription = '/billing/subscription';

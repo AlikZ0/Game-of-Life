@@ -1,0 +1,44 @@
+# ============================================================================
+#  Base kustomization — common manifests shared by all environments.
+#
+#  Do NOT `kubectl apply -k base/` directly in real environments; apply an
+#  overlay instead:
+#      kubectl apply -k ../overlays/staging
+#      kubectl apply -k ../overlays/prod
+#
+#  Structure:
+#      base/                 ← this directory (env-agnostic manifests)
+#      overlays/staging/     ← staging patches (replicas, host, image tag)
+#      overlays/prod/        ← prod patches (replicas, host, image tag)
+#
+#  NOTE: secret.example.yaml is intentionally NOT listed below — it is
+#  documentation only. Provide the real Secret out-of-band via
+#  sealed-secrets / SOPS / External Secrets before applying.
+# ============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: lifequest
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres-statefulset.yaml
+  - redis-deployment.yaml
+  - api-deployment.yaml
+  - worker-deployment.yaml
+  - migrate-job.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - network-policy.yaml
+
+# Common labels stamped onto every resource.
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: lifequest
+    includeSelectors: false
+
+# Overlays override the tag; this is the canonical image name.
+images:
+  - name: ghcr.io/lifequest/api
+    newTag: latest

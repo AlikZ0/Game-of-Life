@@ -1,0 +1,148 @@
+# ============================================================================
+#  CD — build & push the backend image to GHCR, then deploy to Kubernetes.
+#    - push to main            → deploy to STAGING
+#    - push of a v* git tag    → deploy to PRODUCTION
+#  Runs the Prisma migrate Job before the rollout, waits for completion.
+#
+#  Required repo/environment secrets (placeholders — configure in GitHub):
+#    KUBE_CONFIG_STAGING / KUBE_CONFIG_PROD  — base64 kubeconfig for the cluster
+#  GHCR auth uses the built-in GITHUB_TOKEN (packages: write).
+# ============================================================================
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/api   # ghcr.io/<owner>/api
+
+jobs:
+  # ───────────────────────── Build & push image ────────────────────────────
+  build-push:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute version tag
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.value }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────── Deploy to cluster ───────────────────────────
+  deploy:
+    name: Deploy (${{ github.ref_type == 'tag' && 'prod' || 'staging' }})
+    runs-on: ubuntu-latest
+    needs: build-push
+    # GitHub Environment gates prod behind required reviewers / secrets.
+    environment: ${{ github.ref_type == 'tag' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select overlay
+        id: overlay
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "path=infra/k8s/overlays/prod" >> "$GITHUB_OUTPUT"
+            echo "kubeconfig_secret=KUBE_CONFIG_PROD" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=infra/k8s/overlays/staging" >> "$GITHUB_OUTPUT"
+            echo "kubeconfig_secret=KUBE_CONFIG_STAGING" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install kubectl & kustomize
+        uses: azure/setup-kubectl@v4
+        with:
+          version: latest
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          # Pick the right kubeconfig secret for the target environment.
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 -d > "$HOME/.kube/config"
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > "$HOME/.kube/config"
+          fi
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Pin image tag in overlay
+        working-directory: ${{ steps.overlay.outputs.path }}
+        run: |
+          kubectl kustomize --help >/dev/null 2>&1 || true
+          # Set the exact pushed tag for a reproducible rollout.
+          kustomize edit set image \
+            ghcr.io/lifequest/api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-push.outputs.version }} \
+            || echo "kustomize not found; ensure overlays reference the correct tag"
+
+      # ── 1. Run DB migrations first (idempotent) ──────────────────────────
+      - name: Run migrate Job
+        run: |
+          NS=$(kubectl kustomize ${{ steps.overlay.outputs.path }} | \
+               awk '/^  namespace:/{print $2; exit}')
+          NS=${NS:-lifequest}
+          # Recreate the Job so it re-runs on each deploy.
+          kubectl -n "$NS" delete job/migrate --ignore-not-found
+          kubectl apply -k ${{ steps.overlay.outputs.path }} \
+            --selector app.kubernetes.io/name=migrate || true
+          # Apply everything, then wait for the migration to finish.
+          kubectl apply -k ${{ steps.overlay.outputs.path }}
+          kubectl -n "$NS" wait --for=condition=complete job/migrate --timeout=300s
+
+      # ── 2. Wait for rollouts ─────────────────────────────────────────────
+      - name: Wait for rollout
+        run: |
+          NS=$(kubectl kustomize ${{ steps.overlay.outputs.path }} | \
+               awk '/^  namespace:/{print $2; exit}')
+          NS=${NS:-lifequest}
+          kubectl -n "$NS" rollout status deployment/api    --timeout=300s
+          kubectl -n "$NS" rollout status deployment/worker --timeout=300s
+
+      # NOTE: The Secret (lifequest-secrets) is NOT applied here. Provision it
+      # out-of-band via sealed-secrets / SOPS / External Secrets Operator.

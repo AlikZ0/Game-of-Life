@@ -1,0 +1,14 @@
+# ============================================================================
+#  Namespace for all Life Quest workloads.
+#  Overlays (staging / prod) set the effective namespace via kustomize.
+# ============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lifequest
+  labels:
+    app.kubernetes.io/part-of: lifequest
+    # Enforce the restricted Pod Security Standard on this namespace.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted

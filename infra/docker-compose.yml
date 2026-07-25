@@ -1,0 +1,129 @@
+# ============================================================================
+#  Life Quest — Local / Dev orchestration (base compose file)
+#  Bring up the full stack:  Postgres + Redis + API + Worker + Nginx.
+#
+#    cd infra
+#    cp ../backend/.env.example ../backend/.env
+#    docker compose up --build
+#
+#  docker-compose.override.yml is auto-merged for dev conveniences
+#  (bind mounts, hot reload, exposed DB port). Use `-f docker-compose.yml`
+#  alone to emulate a production-like run.
+# ============================================================================
+
+name: lifequest
+
+services:
+  # ─────────────────────────────── PostgreSQL ──────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lifequest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lifequest}
+      POSTGRES_DB: ${POSTGRES_DB:-lifequest}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - lifequest-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lifequest} -d ${POSTGRES_DB:-lifequest}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ──────────────────────────────── Redis ──────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - lifequest-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  # ─────────────────────────────── API (NestJS) ────────────────────────────
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: lifequest/api:local
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Compose service names resolve on the shared network.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lifequest}:${POSTGRES_PASSWORD:-lifequest}@postgres:5432/${POSTGRES_DB:-lifequest}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
+    # Apply DB migrations, then boot the API. `migrate deploy` is idempotent.
+    command: sh -c "npx prisma migrate deploy && node dist/main.js"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - lifequest-net
+
+  # ─────────────────────────── Worker (BullMQ) ─────────────────────────────
+  worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: lifequest/api:local
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lifequest}:${POSTGRES_PASSWORD:-lifequest}@postgres:5432/${POSTGRES_DB:-lifequest}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
+    command: ["node", "dist/worker.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        # Let the API run migrations first so the worker starts on a ready DB.
+        condition: service_started
+    networks:
+      - lifequest-net
+
+  # ──────────────────────── Nginx reverse proxy ────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - lifequest-net
+
+# ─────────────────────────────── Volumes ───────────────────────────────────
+volumes:
+  postgres-data:
+  redis-data:
+
+# ─────────────────────────────── Network ───────────────────────────────────
+networks:
+  lifequest-net:
+    driver: bridge

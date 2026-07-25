@@ -1,0 +1,69 @@
+# ============================================================================
+#  Production overlay — full replicas, prod host + image tag.
+#  Apply:  kubectl apply -k infra/k8s/overlays/prod
+#
+#  ⚠️  In prod, prefer a managed Postgres. To use one:
+#      1. Point DATABASE_URL (Secret) at the managed endpoint.
+#      2. Add a `patchesStrategicMerge`/`patches` entry that removes the
+#         in-cluster postgres StatefulSet, or drop it from base for this overlay.
+# ============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: lifequest
+
+resources:
+  - ../../base
+
+# CI replaces newTag with the released image (git SHA / semver tag).
+images:
+  - name: ghcr.io/lifequest/api
+    newTag: latest
+
+configMapGenerator:
+  - name: lifequest-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - CORS_ORIGINS=https://app.lifequest.app
+      - LOG_LEVEL=info
+
+patches:
+  # Production API replicas (HPA takes over above this floor).
+  - target:
+      kind: Deployment
+      name: api
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  # More worker capacity in prod.
+  - target:
+      kind: Deployment
+      name: worker
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  # Production HPA range.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: api
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 20
+  # Production host (matches ingress.yaml default, explicit for clarity).
+  - target:
+      kind: Ingress
+      name: lifequest
+    patch: |
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: api.lifequest.app
+      - op: replace
+        path: /spec/rules/0/host
+        value: api.lifequest.app

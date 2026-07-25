@@ -1,0 +1,59 @@
+# ============================================================================
+#  Life Quest — Dev override (auto-merged with docker-compose.yml)
+#  Adds developer conveniences on top of the base stack:
+#    - source bind-mounts + hot reload (nest start:dev / worker watch)
+#    - exposed Postgres & Redis ports for local GUI clients
+#    - relaxed restart policy
+#
+#  Docker Compose merges this file automatically:
+#    docker compose up          # base + override (dev)
+#    docker compose -f docker-compose.yml up   # base only (prod-like)
+# ============================================================================
+
+services:
+  postgres:
+    # Expose Postgres to the host for psql / TablePlus / DataGrip.
+    ports:
+      - "5432:5432"
+
+  redis:
+    # Expose Redis to the host for redis-cli / RedisInsight.
+    ports:
+      - "6379:6379"
+
+  api:
+    # Build the deps stage so devDependencies (nest CLI, ts-node) are present.
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: build
+    environment:
+      NODE_ENV: development
+    # Live-reloading dev server. Migrations still run first.
+    command: sh -c "npx prisma migrate deploy && npm run start:dev"
+    volumes:
+      # Bind-mount source for hot reload; keep container node_modules intact.
+      - ../backend:/app
+      - /app/node_modules
+    # Node inspector for debugging (attach on localhost:9229).
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+
+  worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: build
+    environment:
+      NODE_ENV: development
+    # Watch-mode worker for hot reload during dev.
+    command: sh -c "npm run start:dev -- worker || node dist/worker.js"
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+
+  nginx:
+    # In dev the app is reachable directly on :3000; nginx is optional.
+    # Kept running so the proxy path (:80) can still be exercised locally.
+    restart: "no"

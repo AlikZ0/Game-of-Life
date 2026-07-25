@@ -1,0 +1,66 @@
+# ============================================================================
+#  Migration Job — runs `prisma migrate deploy` against the target database.
+#  Run this BEFORE rolling out a new API/worker version:
+#      kubectl apply -k overlays/prod
+#      kubectl -n lifequest delete job/migrate --ignore-not-found
+#      kubectl apply -f k8s/base/migrate-job.yaml   # (or via kustomize)
+#      kubectl -n lifequest wait --for=condition=complete job/migrate --timeout=180s
+#
+#  In CI/CD (deploy.yml) this is applied and waited on automatically.
+#  A ttlSecondsAfterFinished cleans the Job up after completion.
+# ============================================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  labels:
+    app.kubernetes.io/name: migrate
+    app.kubernetes.io/part-of: lifequest
+  annotations:
+    # Helm-style hint; harmless with kustomize. Documents intent.
+    "lifequest.app/run": "pre-deploy"
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: migrate
+        app.kubernetes.io/part-of: lifequest
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          # Must match the API image tag being deployed (patched per-overlay).
+          image: ghcr.io/lifequest/api:latest
+          command: ["npx", "prisma", "migrate", "deploy"]
+          envFrom:
+            - configMapRef:
+                name: lifequest-config
+            - secretRef:
+                name: lifequest-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "192Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

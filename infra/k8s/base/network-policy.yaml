@@ -1,0 +1,114 @@
+# ============================================================================
+#  NetworkPolicies — default-deny + explicit allows (zero-trust posture).
+#  Requires a CNI that enforces NetworkPolicy (Calico, Cilium, etc.).
+# ============================================================================
+
+# ── Default: deny all ingress to every pod in the namespace ─────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  labels:
+    app.kubernetes.io/part-of: lifequest
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# ── API: allow HTTP only from the ingress-nginx namespace ───────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-api
+  labels:
+    app.kubernetes.io/part-of: lifequest
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+---
+# ── Postgres: allow 5432 only from api, worker and migrate pods ─────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-postgres
+  labels:
+    app.kubernetes.io/part-of: lifequest
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: worker
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: migrate
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# ── Redis: allow 6379 only from api and worker pods ─────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-redis
+  labels:
+    app.kubernetes.io/part-of: lifequest
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: worker
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# ── Allow DNS egress for all pods (needed for service discovery) ────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  labels:
+    app.kubernetes.io/part-of: lifequest
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow all other egress (DB, Redis, Stripe, Firebase, package registries).
+    # Tighten per-environment if you enumerate external endpoints.
+    - {}

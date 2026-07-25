@@ -1,0 +1,35 @@
+# ─── OS / editors ───────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ─── Node / backend ─────────────────────────────
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+
+# ─── Prisma ─────────────────────────────────────
+backend/prisma/*.db
+
+# ─── Flutter / mobile ───────────────────────────
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/.packages
+mobile/pubspec.lock
+**/*.g.dart
+**/*.freezed.dart
+
+# ─── Infra / secrets ────────────────────────────
+infra/k8s/**/secret.yaml
+*.pem
+*.key
+kubeconfig

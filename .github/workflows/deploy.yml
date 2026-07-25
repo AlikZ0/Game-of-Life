@@ -102,17 +102,26 @@ jobs:
           version: latest
 
       - name: Configure kubeconfig
+        id: kube
+        env:
+          KUBECONFIG_DATA: ${{ github.ref_type == 'tag' && secrets.KUBE_CONFIG_PROD || secrets.KUBE_CONFIG_STAGING }}
         run: |
           mkdir -p "$HOME/.kube"
-          # Pick the right kubeconfig secret for the target environment.
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 -d > "$HOME/.kube/config"
-          else
-            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > "$HOME/.kube/config"
+          # No cluster credentials configured yet → the image is built & pushed,
+          # but we skip the rollout instead of failing the workflow. Add the
+          # ${{ steps.overlay.outputs.kubeconfig_secret }} secret (base64
+          # kubeconfig) to enable real deploys.
+          if [ -z "$KUBECONFIG_DATA" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::No ${{ steps.overlay.outputs.kubeconfig_secret }} secret set; skipping cluster rollout (image was built & pushed)."
+            exit 0
           fi
+          echo "$KUBECONFIG_DATA" | base64 -d > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Pin image tag in overlay
+        if: steps.kube.outputs.configured == 'true'
         working-directory: ${{ steps.overlay.outputs.path }}
         run: |
           kubectl kustomize --help >/dev/null 2>&1 || true
@@ -123,6 +132,7 @@ jobs:
 
       # ── 1. Run DB migrations first (idempotent) ──────────────────────────
       - name: Run migrate Job
+        if: steps.kube.outputs.configured == 'true'
         run: |
           NS=$(kubectl kustomize ${{ steps.overlay.outputs.path }} | \
                awk '/^  namespace:/{print $2; exit}')
@@ -137,6 +147,7 @@ jobs:
 
       # ── 2. Wait for rollouts ─────────────────────────────────────────────
       - name: Wait for rollout
+        if: steps.kube.outputs.configured == 'true'
         run: |
           NS=$(kubectl kustomize ${{ steps.overlay.outputs.path }} | \
                awk '/^  namespace:/{print $2; exit}')

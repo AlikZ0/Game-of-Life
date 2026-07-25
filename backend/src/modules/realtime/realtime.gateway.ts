@@ -98,20 +98,22 @@ export class RealtimeGateway
   }
 
   // ── Outbound emits (called by services) ──────────────────
+  // `server` is only bound once the HTTP server is listening; guard so service
+  // callers are safe during tests / before any client has connected.
   emitLevelUp(characterId: string, payload: unknown): void {
-    this.server.to(`character:${characterId}`).emit('level-up', payload);
+    this.server?.to(`character:${characterId}`).emit('level-up', payload);
   }
 
   emitBossDefeated(characterId: string, payload: unknown): void {
-    this.server.to(`character:${characterId}`).emit('boss-defeated', payload);
+    this.server?.to(`character:${characterId}`).emit('boss-defeated', payload);
   }
 
   emitGuildMessage(guildId: string, payload: unknown): void {
-    this.server.to(`guild:${guildId}`).emit('guild:message', payload);
+    this.server?.to(`guild:${guildId}`).emit('guild:message', payload);
   }
 
   emitLeaderboardUpdate(guildId: string, payload: unknown): void {
-    this.server.to(`guild:${guildId}`).emit('leaderboard:update', payload);
+    this.server?.to(`guild:${guildId}`).emit('leaderboard:update', payload);
   }
 
   /** Pull the access token from socket auth, query string, or auth header. */

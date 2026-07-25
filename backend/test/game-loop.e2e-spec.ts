@@ -79,15 +79,12 @@ describe('Game loop (e2e)', () => {
   });
 
   it('creates a daily quest', async () => {
-    const res = await request(http)
-      .post(`${api}/quests`)
-      .set(auth())
-      .send({
-        title: 'Code for 45 minutes',
-        cadence: 'DAILY',
-        difficulty: 'HARD',
-        skillKey: 'programming',
-      });
+    const res = await request(http).post(`${api}/quests`).set(auth()).send({
+      title: 'Code for 45 minutes',
+      cadence: 'DAILY',
+      difficulty: 'HARD',
+      skillKey: 'programming',
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.data.completedThisPeriod).toBe(false);
@@ -128,9 +125,7 @@ describe('Game loop (e2e)', () => {
     );
     expect(programming.xp).toBeGreaterThan(0);
 
-    const dash = await request(http)
-      .get(`${api}/stats/dashboard`)
-      .set(auth());
+    const dash = await request(http).get(`${api}/stats/dashboard`).set(auth());
     expect(dash.body.data.questsCompleted30d).toBe(1);
     expect(dash.body.data.currentStreak).toBe(1);
   });
@@ -143,10 +138,12 @@ describe('Game loop (e2e)', () => {
     expect(boss.status).toBe(201);
     bossId = boss.body.data.id;
 
-    const quest = await request(http)
-      .post(`${api}/quests`)
-      .set(auth())
-      .send({ title: 'Final push', cadence: 'DAILY', difficulty: 'MEDIUM', bossId });
+    const quest = await request(http).post(`${api}/quests`).set(auth()).send({
+      title: 'Final push',
+      cadence: 'DAILY',
+      difficulty: 'MEDIUM',
+      bossId,
+    });
     bossQuestId = quest.body.data.id;
 
     const res = await request(http)
@@ -157,9 +154,7 @@ describe('Game loop (e2e)', () => {
     expect(res.body.data.bossDamage).toBeGreaterThan(0);
     expect(res.body.data.bossDefeated).toBe(true);
 
-    const view = await request(http)
-      .get(`${api}/bosses/${bossId}`)
-      .set(auth());
+    const view = await request(http).get(`${api}/bosses/${bossId}`).set(auth());
     expect(view.body.data.status).toBe('DEFEATED');
     expect(view.body.data.currentHp).toBe(0);
   });

@@ -1,3 +1,4 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import {
   ConflictException,
   ForbiddenException,
@@ -6,14 +7,20 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { LedgerReason, Prisma, Quest, QuestCadence } from '@prisma/client';
+import { Queue } from 'bullmq';
 import { periodKeyFor } from '../../../common/utils/period';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { BossesService } from '../../bosses/application/bosses.service';
 import { CharacterService } from '../../character/application/character.service';
 import {
+  GAMIFICATION_QUEUE,
+  GamificationJob,
+} from '../../gamification/gamification.constants';
+import {
   computeReward,
   streakMultiplier,
 } from '../../gamification/domain/rewards';
+import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { StreaksService } from '../../streaks/application/streaks.service';
 import { QUEST_REPOSITORY, QuestRepository } from '../domain/quest.repository';
 import {
@@ -31,6 +38,9 @@ export class QuestsService {
     private readonly characters: CharacterService,
     private readonly bosses: BossesService,
     private readonly streaks: StreaksService,
+    private readonly realtime: RealtimeGateway,
+    @InjectQueue(GAMIFICATION_QUEUE)
+    private readonly gamificationQueue: Queue<GamificationJob>,
   ) {}
 
   private async characterId(userId: string): Promise<string> {
@@ -183,6 +193,19 @@ export class QuestsService {
       bossDefeated = dmg.defeated;
     }
 
+    // Push live celebration events to the player's device(s)…
+    if (award.levelsGained > 0) {
+      this.realtime.emitLevelUp(characterId, {
+        newLevel: award.character.level,
+        levelsGained: award.levelsGained,
+      });
+    }
+    if (bossDefeated && quest.bossId) {
+      this.realtime.emitBossDefeated(characterId, { bossId: quest.bossId });
+    }
+    // …and evaluate achievements off the request path (best-effort).
+    await this.enqueueAchievementEvaluation(characterId);
+
     return {
       questId: quest.id,
       xpAwarded: reward.xp,
@@ -194,6 +217,25 @@ export class QuestsService {
       bossDefeated,
       streak: streakState.current,
     };
+  }
+
+  /**
+   * Enqueue asynchronous achievement evaluation for the character. Failures to
+   * enqueue (e.g. a transient Redis outage) must never fail the completion the
+   * player already earned, so they are swallowed and logged by the queue layer.
+   */
+  private async enqueueAchievementEvaluation(
+    characterId: string,
+  ): Promise<void> {
+    try {
+      await this.gamificationQueue.add(
+        'evaluate-achievements',
+        { type: 'evaluate-achievements', characterId },
+        { removeOnComplete: true, removeOnFail: 100, attempts: 3 },
+      );
+    } catch {
+      // best-effort: achievements are recomputed on next completion / on demand
+    }
   }
 
   private async assertOwnership(

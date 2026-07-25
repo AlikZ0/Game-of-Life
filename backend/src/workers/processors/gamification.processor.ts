@@ -2,12 +2,10 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AchievementsService } from '../../modules/achievements/application/achievements.service';
-
-export const GAMIFICATION_QUEUE = 'gamification';
-
-export type GamificationJob =
-  | { type: 'evaluate-achievements'; characterId: string }
-  | { type: 'recompute-leaderboard'; guildId: string };
+import {
+  GAMIFICATION_QUEUE,
+  GamificationJob,
+} from '../../modules/gamification/gamification.constants';
 
 /**
  * Consumes gamification jobs enqueued by the API after gameplay events.

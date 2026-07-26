@@ -6,9 +6,11 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { PaginationQueryDto } from '../../../common/dto/pagination.dto';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { EconomyService } from '../application/economy.service';
 import { CreateShopRewardDto } from '../application/dto/economy.dto';
@@ -66,6 +68,17 @@ export class EconomyController {
   @ApiOperation({ summary: 'List owned cosmetics, titles, coupons and items' })
   async inventory(@CurrentUser('userId') userId: string) {
     return this.economy.listInventory(await this.characterId(userId));
+  }
+
+  @Get('economy/ledger')
+  @ApiOperation({
+    summary: 'Paginated gold transaction history (newest first)',
+  })
+  async ledger(
+    @CurrentUser('userId') userId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.economy.ledger(await this.characterId(userId), query);
   }
 
   @Post('inventory/:id/equip')

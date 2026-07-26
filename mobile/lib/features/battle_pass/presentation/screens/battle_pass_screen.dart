@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -18,9 +19,10 @@ class BattlePassScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pass = ref.watch(battlePassProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Battle Pass')),
+      appBar: AppBar(title: Text(l10n.battlePassTitle)),
       body: pass.when(
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(message: e.toString(), onRetry: () => ref.invalidate(battlePassProvider)),
@@ -44,6 +46,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
@@ -60,15 +63,17 @@ class _Header extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(pass.seasonName, style: text.titleMedium),
-                Text('Ends in ${Formatters.countdown(pass.endAt.difference(DateTime.now()))}',
+                Text(
+                    l10n.endsIn(Formatters.countdown(
+                        pass.endAt.difference(DateTime.now()))),
                     style: text.labelSmall),
               ],
             ),
           ),
           if (pass.isPremium)
-            const Chip(
+            Chip(
               backgroundColor: AppColors.gold,
-              label: Text('PREMIUM', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+              label: Text(l10n.premiumBadge, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
             ),
         ],
       ),
@@ -83,7 +88,9 @@ class _TierTrack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (pass.tiers.isEmpty) {
-      return const EmptyView(title: 'No active season', icon: Icons.workspace_premium_rounded);
+      return EmptyView(
+          title: AppLocalizations.of(context).battlePassNoSeason,
+          icon: Icons.workspace_premium_rounded);
     }
     return ListView.builder(
       scrollDirection: Axis.horizontal,
@@ -205,7 +212,7 @@ class _PremiumUpsell extends StatelessWidget {
                 const Icon(Icons.workspace_premium_rounded, color: Colors.black),
                 AppSpacing.hMd,
                 Expanded(
-                  child: Text('Unlock the Premium track',
+                  child: Text(AppLocalizations.of(context).unlockPremiumTrack,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.black)),
                 ),
                 const Icon(Icons.chevron_right_rounded, color: Colors.black),

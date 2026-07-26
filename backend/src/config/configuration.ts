@@ -34,6 +34,12 @@ export interface BillingConfig {
   stripePremiumPriceId?: string;
 }
 
+export interface FirebaseConfig {
+  projectId?: string;
+  clientEmail?: string;
+  privateKey?: string;
+}
+
 export interface AiConfig {
   provider: string;
   apiKey?: string;
@@ -47,6 +53,7 @@ export interface Configuration {
   jwt: JwtConfig;
   oauth: OAuthConfig;
   billing: BillingConfig;
+  firebase: FirebaseConfig;
   ai: AiConfig;
   throttle: { ttl: number; limit: number };
 }
@@ -88,6 +95,11 @@ export default (): Configuration => ({
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     stripePremiumPriceId: process.env.STRIPE_PREMIUM_PRICE_ID,
+  },
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY,
   },
   ai: {
     provider: process.env.AI_PROVIDER ?? 'anthropic',

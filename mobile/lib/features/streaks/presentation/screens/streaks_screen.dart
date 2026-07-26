@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -15,9 +16,10 @@ class StreaksScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final streak = ref.watch(streakProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Streak')),
+      appBar: AppBar(title: Text(l10n.streakTitle)),
       body: streak.when(
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(message: e.toString(), onRetry: () => ref.invalidate(streakProvider)),
@@ -26,7 +28,7 @@ class StreaksScreen extends ConsumerWidget {
           children: [
             _Header(streak: s),
             AppSpacing.vXxl,
-            Text('Milestones', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.milestones, style: Theme.of(context).textTheme.titleMedium),
             AppSpacing.vLg,
             for (final m in Streak.milestones)
               _MilestoneTile(days: m, reached: s.current >= m, current: s.current),
@@ -54,7 +56,7 @@ class _Header extends StatelessWidget {
         children: [
           const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 64),
           Text('${streak.current}', style: text.displayLarge?.copyWith(color: Colors.white)),
-          Text('day streak', style: text.titleMedium?.copyWith(color: Colors.white70)),
+          Text(AppLocalizations.of(context).dayStreakLabel, style: text.titleMedium?.copyWith(color: Colors.white70)),
           AppSpacing.vLg,
           XpBar(
             value: streak.milestoneProgress,
@@ -128,8 +130,8 @@ class _MilestoneTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$days-day streak', style: Theme.of(context).textTheme.titleSmall),
-                Text('Reward: streak freeze + 100 gold', style: Theme.of(context).textTheme.bodySmall),
+                Text(AppLocalizations.of(context).streakDays(days), style: Theme.of(context).textTheme.titleSmall),
+                Text(AppLocalizations.of(context).milestoneReward, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),

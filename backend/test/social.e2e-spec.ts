@@ -166,6 +166,36 @@ describe('Social (e2e)', () => {
     expect(done.completedAt).not.toBeNull();
   });
 
+  it('auto-progresses a non-XP (quests-completed) guild mission', async () => {
+    const mission = await request(http)
+      .post(`${api}/guilds/${guildId}/missions`)
+      .set(bearer(u1.token))
+      .send({
+        title: 'Complete a quest together',
+        targetValue: 1,
+        metric: 'QUESTS_COMPLETED',
+      });
+    expect(mission.status).toBe(201);
+    const missionId = mission.body.data.id;
+
+    const quest = await request(http)
+      .post(`${api}/quests`)
+      .set(bearer(u1.token))
+      .send({ title: 'Any quest', cadence: 'DAILY', difficulty: 'EASY' });
+    await request(http)
+      .post(`${api}/quests/${quest.body.data.id}/complete`)
+      .set(bearer(u1.token));
+
+    const missions = await request(http)
+      .get(`${api}/guilds/${guildId}/missions`)
+      .set(bearer(u1.token));
+    const done = missions.body.data.find(
+      (m: { id: string }) => m.id === missionId,
+    );
+    expect(done.currentValue).toBeGreaterThanOrEqual(1);
+    expect(done.completedAt).not.toBeNull();
+  });
+
   it('lets a member leave the guild', async () => {
     const leave = await request(http)
       .post(`${api}/guilds/${guildId}/leave`)

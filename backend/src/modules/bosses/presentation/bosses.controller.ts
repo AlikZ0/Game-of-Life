@@ -50,4 +50,10 @@ export class BossesController {
   async get(@CurrentUser('userId') userId: string, @Param('id') id: string) {
     return this.bosses.get(await this.characterId(userId), id);
   }
+
+  @Get(':id/quests')
+  @ApiOperation({ summary: 'ACTIVE quests attacking this boss' })
+  async quests(@CurrentUser('userId') userId: string, @Param('id') id: string) {
+    return this.bosses.linkedQuests(await this.characterId(userId), id);
+  }
 }

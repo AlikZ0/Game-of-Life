@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -15,15 +16,16 @@ class BossesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final bosses = ref.watch(bossesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bosses')),
+      appBar: AppBar(title: Text(l10n.navBosses)),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.tertiary,
         onPressed: () {},
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Summon boss', style: TextStyle(color: Colors.white)),
+        label: Text(l10n.summonBoss, style: const TextStyle(color: Colors.white)),
       ),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(bossesProvider),

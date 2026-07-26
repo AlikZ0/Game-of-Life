@@ -298,5 +298,197 @@
         "type": "int"
       }
     }
+  },
+
+  "suggestedQuests": "Suggested quests",
+  "@suggestedQuests": {
+    "description": "AI Coach section header above recommended quests."
+  },
+  "yourSkills": "Your skills",
+  "@yourSkills": {
+    "description": "Skills screen section header above the skill list."
+  },
+  "streakTitle": "Streak",
+  "@streakTitle": {
+    "description": "Streak screen app bar title."
+  },
+  "milestones": "Milestones",
+  "@milestones": {
+    "description": "Streak screen section header above the milestone timeline."
+  },
+  "dayStreakLabel": "day streak",
+  "@dayStreakLabel": {
+    "description": "Label under the big streak count on the streak screen header."
+  },
+  "milestoneReward": "Reward: streak freeze + 100 gold",
+  "@milestoneReward": {
+    "description": "Reward description shown for each streak milestone."
+  },
+  "statisticsTitle": "Statistics",
+  "@statisticsTitle": {
+    "description": "Statistics screen app bar title."
+  },
+  "xpOverTime": "XP over time",
+  "@xpOverTime": {
+    "description": "Statistics section header above the XP trend chart."
+  },
+  "lifeBalance": "Life balance",
+  "@lifeBalance": {
+    "description": "Statistics section header above the life-balance breakdown."
+  },
+  "skillXp": "Skill XP",
+  "@skillXp": {
+    "description": "Statistics section header above the per-skill XP list."
+  },
+  "neglected": "Neglected",
+  "@neglected": {
+    "description": "Badge marking a life-balance area that has been neglected."
+  },
+  "levelShort": "Lvl {level}",
+  "@levelShort": {
+    "description": "Abbreviated character/skill level, e.g. \"Lvl 12\".",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "guildTitle": "Guild",
+  "@guildTitle": {
+    "description": "Guild screen app bar title."
+  },
+  "globalLeaderboards": "Global leaderboards",
+  "@globalLeaderboards": {
+    "description": "Social hub row that opens the global leaderboards."
+  },
+  "pvpArenaTitle": "PvP Arena",
+  "@pvpArenaTitle": {
+    "description": "PvP arena screen app bar title."
+  },
+  "newChallenge": "New challenge",
+  "@newChallenge": {
+    "description": "Button that starts a new PvP challenge."
+  },
+  "vsOpponent": "vs {name}",
+  "@vsOpponent": {
+    "description": "Header on a PvP duel card showing the opponent name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "goPremium": "Go Premium — unlock the full journey",
+  "@goPremium": {
+    "description": "Profile screen premium upsell banner text."
+  },
+  "upgrade": "Upgrade",
+  "@upgrade": {
+    "description": "Profile screen button that opens the premium paywall."
+  },
+  "premiumTitle": "Life Quest Premium",
+  "@premiumTitle": {
+    "description": "Paywall headline (brand)."
+  },
+  "premiumSubtitle": "Unlock everything and level up faster.",
+  "@premiumSubtitle": {
+    "description": "Paywall sub-headline under the title."
+  },
+  "cancelAnytime": "Cancel anytime. Terms apply.",
+  "@cancelAnytime": {
+    "description": "Paywall fine print under the call-to-action."
+  },
+  "rewardRedeemed": "Reward redeemed! Enjoy it — you earned it.",
+  "@rewardRedeemed": {
+    "description": "Snackbar shown after redeeming a shop reward."
+  },
+  "inventoryTitle": "Inventory",
+  "@inventoryTitle": {
+    "description": "Inventory screen app bar title."
+  },
+  "summonBoss": "Summon boss",
+  "@summonBoss": {
+    "description": "Button that creates a new boss."
+  },
+  "attackingQuests": "Attacking quests",
+  "@attackingQuests": {
+    "description": "Boss detail section header above the linked quests."
+  },
+  "battlePassTitle": "Battle Pass",
+  "@battlePassTitle": {
+    "description": "Battle pass screen app bar title (brand)."
+  },
+  "endsIn": "Ends in {time}",
+  "@endsIn": {
+    "description": "Countdown until the current battle-pass season ends.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumBadge": "PREMIUM",
+  "@premiumBadge": {
+    "description": "Badge shown when the battle pass is on the premium track (brand)."
+  },
+  "unlockPremiumTrack": "Unlock the Premium track",
+  "@unlockPremiumTrack": {
+    "description": "Battle pass premium upsell call-to-action."
+  },
+  "achievementsTitle": "Achievements",
+  "@achievementsTitle": {
+    "description": "Achievements screen app bar title."
+  },
+  "skip": "Skip",
+  "@skip": {
+    "description": "Button to skip the onboarding carousel."
+  },
+  "achievementsEmpty": "No achievements yet",
+  "@achievementsEmpty": {
+    "description": "Empty state on the achievements screen."
+  },
+  "achievementsUnlocked": "{count} of {total} unlocked",
+  "@achievementsUnlocked": {
+    "description": "Header showing how many achievements are unlocked.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "battlePassNoSeason": "No active season",
+  "@battlePassNoSeason": {
+    "description": "Empty state when no battle-pass season is active."
+  },
+  "onbTitleQuests": "Turn habits into quests",
+  "@onbTitleQuests": {
+    "description": "Onboarding slide 1 title."
+  },
+  "onbBodyQuests": "Every workout, study session, and good decision earns real XP and gold.",
+  "@onbBodyQuests": {
+    "description": "Onboarding slide 1 body."
+  },
+  "onbTitleBosses": "Defeat your Bosses",
+  "@onbTitleBosses": {
+    "description": "Onboarding slide 2 title."
+  },
+  "onbBodyBosses": "Big goals become HP bars. Chip away with daily quests until they fall.",
+  "@onbBodyBosses": {
+    "description": "Onboarding slide 2 body."
+  },
+  "onbTitleTogether": "Level up together",
+  "@onbTitleTogether": {
+    "description": "Onboarding slide 3 title."
+  },
+  "onbBodyTogether": "Join guilds, climb leaderboards, and challenge friends to PvP.",
+  "@onbBodyTogether": {
+    "description": "Onboarding slide 3 body."
+  },
+  "onbBegin": "Begin your quest",
+  "@onbBegin": {
+    "description": "Onboarding final call-to-action button."
+  },
+  "onbNext": "Next",
+  "@onbNext": {
+    "description": "Onboarding next-slide button."
   }
 }

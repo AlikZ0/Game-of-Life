@@ -223,13 +223,18 @@ export class QuestsService {
       .catch(() => undefined);
     // Advance the seasonal Battle Pass (no-op when no season is active).
     await this.battlePass.addXp(characterId, reward.xp).catch(() => undefined);
-    // Score any active PvP duels this counts toward (XP + quests-completed).
+    // Score any active PvP duels + guild missions this counts toward. XP is
+    // already credited to the guild by recordWeeklyXp above; here we feed the
+    // quests-completed signal to both subsystems.
     await Promise.all([
       this.pvp
         .recordProgress(characterId, PvpMetric.XP, reward.xp)
         .catch(() => undefined),
       this.pvp
         .recordProgress(characterId, PvpMetric.QUESTS_COMPLETED, 1)
+        .catch(() => undefined),
+      this.guilds
+        .recordActivity(characterId, PvpMetric.QUESTS_COMPLETED, 1)
         .catch(() => undefined),
     ]);
 

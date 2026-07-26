@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Difficulty, QuestCadence } from '@prisma/client';
 import { SubscriptionService } from '../../monetization/application/subscription.service';
 import { StatsService } from '../../stats/application/stats.service';
+import { LlmClient } from '../infrastructure/llm-client';
 
 export interface SuggestedQuest {
   title: string;
@@ -33,8 +33,8 @@ export interface CoachAnalysis {
 export class AiCoachService {
   constructor(
     private readonly stats: StatsService,
-    private readonly config: ConfigService,
     private readonly subscriptions: SubscriptionService,
+    private readonly llm: LlmClient,
   ) {}
 
   async analyze(userId: string): Promise<CoachAnalysis> {
@@ -56,8 +56,13 @@ export class AiCoachService {
     // LLM enrichment is a Premium perk: only run it for subscribers, and only
     // when an AI provider key is configured. Free users get the (still useful)
     // rule-based summary above.
-    if (premium && this.config.get<string>('ai.apiKey')) {
-      summary = await this.enrichWithLlm(summary).catch(() => summary);
+    if (premium && this.llm.enabled) {
+      summary = await this.enrichWithLlm(summary, {
+        weak,
+        strengths,
+        streak: dashboard.currentStreak,
+        questsCompleted30d: dashboard.questsCompleted30d,
+      });
     }
 
     return {
@@ -71,14 +76,40 @@ export class AiCoachService {
   }
 
   /**
-   * Placeholder for the Premium LLM path. In production this calls the configured
-   * provider (see AI_PROVIDER/AI_MODEL) to rewrite the summary into personalised,
-   * empathetic coaching. Kept behind the Premium gate and a try/catch so it can
-   * never break the free rule-based analysis.
+   * The Premium LLM path: rewrite the rule-based summary into personalised,
+   * empathetic coaching using the configured provider. Only anonymised,
+   * aggregate stats are sent — never identifiers or raw content. Falls back to
+   * the base summary if the provider is unavailable or returns nothing, so it
+   * can never break the free analysis.
    */
-  private async enrichWithLlm(baseSummary: string): Promise<string> {
-    // TODO: call the AI provider with the user's (anonymised) stats + baseSummary.
-    return baseSummary;
+  private async enrichWithLlm(
+    baseSummary: string,
+    context: {
+      weak: string[];
+      strengths: string[];
+      streak: number;
+      questsCompleted30d: number;
+    },
+  ): Promise<string> {
+    const prompt = [
+      'You are a warm, motivating life-RPG coach. Rewrite the stats below into',
+      '2-3 sentences of encouraging, concrete, actionable coaching. Address the',
+      'player as "you". Do not invent numbers beyond those given.',
+      '',
+      `Quests completed in the last 30 days: ${context.questsCompleted30d}`,
+      `Current streak: ${context.streak} day(s)`,
+      `Strengths: ${context.strengths.join(', ') || 'none yet'}`,
+      `Neglected areas: ${context.weak.join(', ') || 'none'}`,
+      '',
+      `Rule-based summary to improve: "${baseSummary}"`,
+    ].join('\n');
+
+    const enriched = await this.llm.complete({
+      system: 'You are an encouraging productivity and self-improvement coach.',
+      prompt,
+      maxTokens: 300,
+    });
+    return enriched ?? baseSummary;
   }
 
   /** Generate personalised quests biased toward neglected skills. */

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/async_value_views.dart';
@@ -15,11 +16,12 @@ class SkillsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final skills = ref.watch(skillsProvider);
     final heatmap = ref.watch(skillHeatmapProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Skills')),
+      appBar: AppBar(title: Text(l10n.navSkills)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(skillsProvider);
@@ -47,7 +49,7 @@ class SkillsScreen extends ConsumerWidget {
                   ),
                 ),
                 AppSpacing.vXl,
-                Text('Your skills', style: Theme.of(context).textTheme.titleMedium),
+                Text(l10n.yourSkills, style: Theme.of(context).textTheme.titleMedium),
                 AppSpacing.vLg,
                 for (final s in list) ...[
                   SkillTile(skill: s),

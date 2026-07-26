@@ -120,4 +120,36 @@ describe('GuildsService real-time', () => {
     await service.advanceMissions(guildId, PvpMetric.XP, 0);
     expect(prisma.guildMission.findMany).not.toHaveBeenCalled();
   });
+
+  it('feeds a non-XP activity signal into that metric’s missions', async () => {
+    const { service, prisma } = build({ guildId }, [
+      {
+        id: 'm1',
+        currentValue: 2,
+        targetValue: 10,
+        rewardGold: 0,
+        metric: PvpMetric.QUESTS_COMPLETED,
+      },
+    ]);
+    await service.recordActivity(characterId, PvpMetric.QUESTS_COMPLETED, 1);
+    expect(prisma.guildMission.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          guildId,
+          metric: PvpMetric.QUESTS_COMPLETED,
+          completedAt: null,
+        }),
+      }),
+    );
+    expect(prisma.guildMission.updateMany).toHaveBeenCalledWith({
+      where: { id: 'm1', completedAt: null },
+      data: { currentValue: 3, completedAt: null },
+    });
+  });
+
+  it('recordActivity is a no-op for a character not in a guild', async () => {
+    const { service, prisma } = build(null);
+    await service.recordActivity(characterId, PvpMetric.QUESTS_COMPLETED, 1);
+    expect(prisma.guildMission.findMany).not.toHaveBeenCalled();
+  });
 });

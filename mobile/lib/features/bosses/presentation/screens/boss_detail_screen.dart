@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -43,6 +44,7 @@ class BossDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final boss = ref.watch(bossDetailProvider(bossId));
     final quests = ref.watch(bossQuestsProvider(bossId));
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: boss.when(
@@ -73,7 +75,7 @@ class BossDetailScreen extends ConsumerWidget {
                     ],
                   ),
                   AppSpacing.vXl,
-                  Text('Attacking quests', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l10n.attackingQuests, style: Theme.of(context).textTheme.titleMedium),
                   AppSpacing.vLg,
                   quests.when(
                     loading: () => const Padding(padding: EdgeInsets.all(AppSpacing.xxl), child: LoadingView()),

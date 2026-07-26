@@ -89,6 +89,10 @@ export class SubscriptionService {
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: userId,
       metadata: { userId },
+      // Stamp the userId onto the Subscription object too, so the
+      // customer.subscription.* / invoice.* events can be linked back to the
+      // user directly instead of relying on event ordering.
+      subscription_data: { metadata: { userId } },
       success_url: 'lifequest://billing/success',
       cancel_url: 'lifequest://billing/cancel',
     });
@@ -128,6 +132,24 @@ export class SubscriptionService {
       return { received: true, handled: false };
     }
 
+    // Idempotency: Stripe redelivers until it sees a 2xx, so short-circuit any
+    // event id we've already processed. Claiming the id up front (P2002 on a
+    // concurrent redelivery → treat as duplicate) keeps handling exactly-once.
+    try {
+      await this.prisma.processedWebhookEvent.create({
+        data: { id: event.id, provider: 'stripe', type: event.type },
+      });
+    } catch {
+      this.logger.debug(`Duplicate Stripe event ignored: ${event.id}`);
+      return { received: true, handled: false, duplicate: true };
+    }
+
+    await this.dispatch(event);
+    return { received: true, handled: true };
+  }
+
+  /** Route a verified Stripe event to the right subscription mutation. */
+  private async dispatch(event: Stripe.Event): Promise<void> {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -145,10 +167,19 @@ export class SubscriptionService {
         }
         break;
       }
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription;
-        await this.upsertByExternalId(sub.id, {
-          status: this.mapStatus(sub.status),
+        const status = this.mapStatus(sub.status);
+        await this.applySubscription(sub, {
+          // An active/trialing subscription keeps the user on Premium; any other
+          // state (past_due, canceled, …) drops the tier back to FREE.
+          tier:
+            status === SubscriptionStatus.ACTIVE ||
+            status === SubscriptionStatus.TRIALING
+              ? SubscriptionTier.PREMIUM
+              : SubscriptionTier.FREE,
+          status,
           currentPeriodEnd: new Date(sub.current_period_end * 1000),
           cancelAtPeriodEnd: sub.cancel_at_period_end,
         });
@@ -156,17 +187,73 @@ export class SubscriptionService {
       }
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
-        await this.upsertByExternalId(sub.id, {
+        await this.applySubscription(sub, {
           tier: SubscriptionTier.FREE,
           status: SubscriptionStatus.CANCELLED,
+          cancelAtPeriodEnd: false,
         });
+        break;
+      }
+      case 'invoice.payment_succeeded': {
+        // Recurring renewal: confirm Premium/ACTIVE and roll the period forward.
+        const invoice = event.data.object as Stripe.Invoice;
+        const externalId = this.subscriptionIdOf(invoice);
+        if (externalId) {
+          const periodEnd = invoice.lines?.data?.[0]?.period?.end;
+          await this.upsertByExternalId(externalId, {
+            tier: SubscriptionTier.PREMIUM,
+            status: SubscriptionStatus.ACTIVE,
+            currentPeriodEnd: periodEnd
+              ? new Date(periodEnd * 1000)
+              : undefined,
+          });
+        }
+        break;
+      }
+      case 'invoice.payment_failed': {
+        // A failed charge flags the subscription past-due; Stripe keeps retrying
+        // and will send subscription.deleted if it ultimately gives up.
+        const invoice = event.data.object as Stripe.Invoice;
+        const externalId = this.subscriptionIdOf(invoice);
+        if (externalId) {
+          await this.upsertByExternalId(externalId, {
+            status: SubscriptionStatus.PAST_DUE,
+          });
+        }
         break;
       }
       default:
         this.logger.debug(`Unhandled Stripe event: ${event.type}`);
     }
+  }
 
-    return { received: true, handled: true };
+  /** The subscription id carried by an invoice, when present. */
+  private subscriptionIdOf(invoice: Stripe.Invoice): string | null {
+    return typeof invoice.subscription === 'string'
+      ? invoice.subscription
+      : (invoice.subscription?.id ?? null);
+  }
+
+  /**
+   * Persist a subscription-object change, preferring the userId stamped in the
+   * Stripe subscription metadata (robust against event ordering) and falling
+   * back to matching on the stored externalId.
+   */
+  private async applySubscription(
+    sub: Stripe.Subscription,
+    data: {
+      tier?: SubscriptionTier;
+      status?: SubscriptionStatus;
+      currentPeriodEnd?: Date;
+      cancelAtPeriodEnd?: boolean;
+    },
+  ): Promise<void> {
+    const userId = sub.metadata?.userId;
+    if (userId) {
+      await this.upsert(userId, { ...data, externalId: sub.id });
+      return;
+    }
+    await this.upsertByExternalId(sub.id, data);
   }
 
   private mapStatus(status: Stripe.Subscription.Status): SubscriptionStatus {

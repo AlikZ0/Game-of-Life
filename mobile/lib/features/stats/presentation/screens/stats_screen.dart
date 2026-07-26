@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -19,12 +20,13 @@ class StatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final dashboard = ref.watch(statsDashboardProvider);
     final xpSeries = ref.watch(statsXpSeriesProvider);
     final lifeBalance = ref.watch(statsLifeBalanceProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistics')),
+      appBar: AppBar(title: Text(l10n.statisticsTitle)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(statsDashboardProvider);
@@ -57,7 +59,7 @@ class StatsScreen extends ConsumerWidget {
                 ],
               ),
               AppSpacing.vXl,
-              Text('XP over time', style: Theme.of(context).textTheme.titleMedium),
+              Text(l10n.xpOverTime, style: Theme.of(context).textTheme.titleMedium),
               AppSpacing.vLg,
               GlassCard(
                 blur: false,
@@ -71,7 +73,7 @@ class StatsScreen extends ConsumerWidget {
                 ),
               ),
               AppSpacing.vXl,
-              Text('Life balance', style: Theme.of(context).textTheme.titleMedium),
+              Text(l10n.lifeBalance, style: Theme.of(context).textTheme.titleMedium),
               AppSpacing.vLg,
               lifeBalance.when(
                 loading: () => const Padding(padding: EdgeInsets.all(AppSpacing.xl), child: LoadingView()),
@@ -99,7 +101,7 @@ class StatsScreen extends ConsumerWidget {
               ),
               if (s.skillBalance.isNotEmpty) ...[
                 AppSpacing.vXl,
-                Text('Skill XP', style: Theme.of(context).textTheme.titleMedium),
+                Text(l10n.skillXp, style: Theme.of(context).textTheme.titleMedium),
                 AppSpacing.vLg,
                 for (final sb in s.skillBalance) ...[
                   _SkillBalanceRow(balance: sb),
@@ -160,7 +162,7 @@ class _BalanceRow extends StatelessWidget {
             if (slice.neglected)
               Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.sm),
-                child: Text('Neglected', style: text.labelSmall?.copyWith(color: AppColors.warning)),
+                child: Text(AppLocalizations.of(context).neglected, style: text.labelSmall?.copyWith(color: AppColors.warning)),
               ),
             Text(Formatters.percent(slice.share), style: text.labelMedium),
           ],
@@ -197,7 +199,7 @@ class _SkillBalanceRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(child: Text(balance.name, style: text.titleSmall)),
-          Text('Lvl ${balance.level}', style: text.labelMedium?.copyWith(color: AppColors.accent)),
+          Text(AppLocalizations.of(context).levelShort(balance.level), style: text.labelMedium?.copyWith(color: AppColors.accent)),
           AppSpacing.hMd,
           Text('${Formatters.compact(balance.totalXp)} XP', style: text.labelSmall),
         ],

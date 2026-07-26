@@ -189,4 +189,22 @@ describe('Game loop (e2e)', () => {
     expect(view.body.data.status).toBe('DEFEATED');
     expect(view.body.data.currentHp).toBe(0);
   });
+
+  it('exposes the IAP redeem route, gated when billing is unconfigured', async () => {
+    // No APPLE_SHARED_SECRET in the test env → the verifier reports the feature
+    // unavailable (503), proving the route + auth + provider routing are wired.
+    const res = await request(http)
+      .post(`${api}/subscription/iap`)
+      .set(auth())
+      .send({ provider: 'APPLE_IAP', receipt: 'dummy-receipt' });
+    expect(res.status).toBe(503);
+  });
+
+  it('rejects an unknown IAP provider with 400', async () => {
+    const res = await request(http)
+      .post(`${api}/subscription/iap`)
+      .set(auth())
+      .send({ provider: 'STRIPE', receipt: 'x' });
+    expect(res.status).toBe(400);
+  });
 });

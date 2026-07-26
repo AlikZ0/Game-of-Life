@@ -1,8 +1,9 @@
-import { Controller, Get, Headers, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
+import { RedeemReceiptDto } from '../application/dto/redeem-receipt.dto';
 import { SubscriptionService } from '../application/subscription.service';
 
 @ApiTags('subscription')
@@ -24,6 +25,17 @@ export class SubscriptionController {
     @CurrentUser('email') email: string,
   ) {
     return this.subscription.createCheckoutSession(userId, email);
+  }
+
+  @Post('iap')
+  @ApiOperation({
+    summary: 'Redeem an Apple/Google in-app-purchase receipt for Premium',
+  })
+  async redeem(
+    @CurrentUser('userId') userId: string,
+    @Body() dto: RedeemReceiptDto,
+  ) {
+    return this.subscription.redeemReceipt(userId, dto.provider, dto.receipt);
   }
 
   @Public()

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import {
   AuthenticatedUser,
@@ -15,6 +16,15 @@ import {
   RegisterDto,
 } from '../application/dto/auth.dto';
 
+// Unauthenticated auth endpoints are the prime target for brute-force and
+// account-creation abuse, so they get far tighter per-IP limits than the
+// global default (which stays in force for the rest of the API).
+const MINUTE = 60_000;
+const CREDENTIALS_THROTTLE = { default: { limit: 8, ttl: MINUTE } };
+const REGISTER_THROTTLE = { default: { limit: 6, ttl: MINUTE } };
+const OAUTH_THROTTLE = { default: { limit: 12, ttl: MINUTE } };
+const REFRESH_THROTTLE = { default: { limit: 20, ttl: MINUTE } };
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -25,6 +35,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(REGISTER_THROTTLE)
   @Post('register')
   @ApiOperation({ summary: 'Create an account with email + password' })
   register(
@@ -35,6 +46,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(CREDENTIALS_THROTTLE)
   @Post('login')
   @ApiOperation({ summary: 'Log in with email + password' })
   login(@Body() dto: LoginDto, @Req() req: Request): Promise<AuthTokensDto> {
@@ -42,6 +54,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(OAUTH_THROTTLE)
   @Post('google')
   @ApiOperation({ summary: 'Log in / sign up with a Google ID token' })
   google(@Body() dto: OAuthDto, @Req() req: Request): Promise<AuthTokensDto> {
@@ -49,6 +62,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(OAUTH_THROTTLE)
   @Post('apple')
   @ApiOperation({ summary: 'Log in / sign up with an Apple identity token' })
   apple(@Body() dto: OAuthDto, @Req() req: Request): Promise<AuthTokensDto> {
@@ -56,6 +70,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(REFRESH_THROTTLE)
   @Post('refresh')
   @ApiOperation({ summary: 'Exchange a refresh token for a new token pair' })
   refresh(

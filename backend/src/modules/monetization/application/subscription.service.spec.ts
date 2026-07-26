@@ -1,4 +1,8 @@
-import { SubscriptionStatus, SubscriptionTier } from '@prisma/client';
+import {
+  BillingProvider,
+  SubscriptionStatus,
+  SubscriptionTier,
+} from '@prisma/client';
 import { SubscriptionService } from './subscription.service';
 
 /**
@@ -11,7 +15,12 @@ describe('SubscriptionService.isPremium', () => {
       subscription: { findUnique: jest.fn().mockResolvedValue(sub) },
     };
     const config = { get: jest.fn().mockReturnValue(undefined) };
-    return new SubscriptionService(prisma as never, config as never);
+    return new SubscriptionService(
+      prisma as never,
+      config as never,
+      {} as never,
+      {} as never,
+    );
   }
 
   it('is true for an active Premium subscription', async () => {
@@ -83,7 +92,12 @@ describe('SubscriptionService.handleWebhook', () => {
         k === 'billing.stripeSecretKey' ? 'sk_test_x' : undefined,
       ),
     };
-    const service = new SubscriptionService(prisma as never, config as never);
+    const service = new SubscriptionService(
+      prisma as never,
+      config as never,
+      {} as never,
+      {} as never,
+    );
     return { service, prisma };
   }
 
@@ -192,5 +206,112 @@ describe('SubscriptionService.handleWebhook', () => {
     });
     expect(res).toMatchObject({ handled: false, duplicate: true });
     expect(prisma.subscription.upsert).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Mobile IAP redemption: verify a store receipt, then grant/revoke Premium.
+ */
+describe('SubscriptionService.redeemReceipt', () => {
+  function build(verified: {
+    provider: BillingProvider;
+    externalId: string;
+    isActive: boolean;
+    expiresAt: Date | null;
+  }) {
+    const prisma = {
+      subscription: {
+        upsert: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn().mockResolvedValue({
+          tier: verified.isActive
+            ? SubscriptionTier.PREMIUM
+            : SubscriptionTier.FREE,
+          status: verified.isActive
+            ? SubscriptionStatus.ACTIVE
+            : SubscriptionStatus.EXPIRED,
+          currentPeriodEnd: verified.expiresAt,
+          cancelAtPeriodEnd: false,
+        }),
+      },
+    };
+    const config = { get: jest.fn().mockReturnValue(undefined) };
+    const apple = { verify: jest.fn().mockResolvedValue(verified) };
+    const google = { verify: jest.fn().mockResolvedValue(verified) };
+    const service = new SubscriptionService(
+      prisma as never,
+      config as never,
+      apple as never,
+      google as never,
+    );
+    return { service, prisma, apple, google };
+  }
+
+  it('grants Premium for an active Apple receipt', async () => {
+    const { service, prisma, apple } = build({
+      provider: BillingProvider.APPLE_IAP,
+      externalId: 'o1',
+      isActive: true,
+      expiresAt: new Date('2099-01-01'),
+    });
+    const status = await service.redeemReceipt(
+      'u1',
+      BillingProvider.APPLE_IAP,
+      'receipt',
+    );
+    expect(apple.verify).toHaveBeenCalledWith('receipt');
+    expect(prisma.subscription.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 'u1' },
+        update: expect.objectContaining({
+          provider: BillingProvider.APPLE_IAP,
+          tier: SubscriptionTier.PREMIUM,
+          status: SubscriptionStatus.ACTIVE,
+          externalId: 'o1',
+        }),
+      }),
+    );
+    expect(status.tier).toBe(SubscriptionTier.PREMIUM);
+  });
+
+  it('routes Google receipts to the Google verifier', async () => {
+    const { service, apple, google } = build({
+      provider: BillingProvider.GOOGLE_PLAY,
+      externalId: 'GPA.1',
+      isActive: true,
+      expiresAt: new Date('2099-01-01'),
+    });
+    await service.redeemReceipt('u1', BillingProvider.GOOGLE_PLAY, 'r');
+    expect(google.verify).toHaveBeenCalled();
+    expect(apple.verify).not.toHaveBeenCalled();
+  });
+
+  it('drops the tier to FREE for an expired receipt', async () => {
+    const { service, prisma } = build({
+      provider: BillingProvider.APPLE_IAP,
+      externalId: 'o1',
+      isActive: false,
+      expiresAt: new Date('2000-01-01'),
+    });
+    await service.redeemReceipt('u1', BillingProvider.APPLE_IAP, 'r');
+    expect(prisma.subscription.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          tier: SubscriptionTier.FREE,
+          status: SubscriptionStatus.EXPIRED,
+        }),
+      }),
+    );
+  });
+
+  it('rejects an unsupported provider (e.g. Stripe) for IAP', async () => {
+    const { service } = build({
+      provider: BillingProvider.APPLE_IAP,
+      externalId: 'o1',
+      isActive: true,
+      expiresAt: null,
+    });
+    await expect(
+      service.redeemReceipt('u1', BillingProvider.STRIPE, 'r'),
+    ).rejects.toThrow();
   });
 });

@@ -32,6 +32,12 @@ export interface BillingConfig {
   stripeSecretKey?: string;
   stripeWebhookSecret?: string;
   stripePremiumPriceId?: string;
+  /** Apple App Store shared secret for /verifyReceipt. */
+  appleSharedSecret?: string;
+  /** Android package name + service-account creds for the Publisher API. */
+  googlePackageName?: string;
+  googleServiceAccountEmail?: string;
+  googleServiceAccountKey?: string;
 }
 
 export interface FirebaseConfig {
@@ -95,6 +101,10 @@ export default (): Configuration => ({
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     stripePremiumPriceId: process.env.STRIPE_PREMIUM_PRICE_ID,
+    appleSharedSecret: process.env.APPLE_SHARED_SECRET,
+    googlePackageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
+    googleServiceAccountEmail: process.env.GOOGLE_PLAY_SA_EMAIL,
+    googleServiceAccountKey: process.env.GOOGLE_PLAY_SA_KEY,
   },
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID,

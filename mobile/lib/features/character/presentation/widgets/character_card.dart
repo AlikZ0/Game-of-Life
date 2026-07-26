@@ -55,7 +55,7 @@ class CharacterCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        c.activeTitle ?? '${c.characterClass.label} • Lvl ${c.level}',
+                        c.activeTitle ?? '${c.characterClass.label} • ${l10n.level(c.level)}',
                         style: text.bodySmall?.copyWith(color: Colors.white70),
                       ),
                     ],

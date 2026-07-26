@@ -610,3 +610,16 @@ model AuditLog {
   @@index([userId, createdAt])
   @@map("audit_logs")
 }
+
+// ─── Billing webhook idempotency ────────────────────────────────────────────
+// Records every Stripe event id we've processed so redelivered webhooks are
+// short-circuited exactly once (Stripe retries until it sees a 2xx).
+
+model ProcessedWebhookEvent {
+  id          String   @id // provider event id, e.g. Stripe "evt_..."
+  provider    String
+  type        String
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("processed_webhook_events")
+}

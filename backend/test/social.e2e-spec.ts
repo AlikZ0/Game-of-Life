@@ -68,7 +68,7 @@ describe('Social (e2e)', () => {
     const res = await request(http)
       .post(`${api}/guilds`)
       .set(bearer(u1.token))
-      .send({ name: `Dawn Raiders ${stamp}`, tag: 'DAWN' });
+      .send({ name: `Dawn Raiders ${stamp}`, tag: `D${stamp % 10000}` });
     expect(res.status).toBe(201);
     expect(res.body.data.id).toEqual(expect.any(String));
     guildId = res.body.data.id;
@@ -186,5 +186,20 @@ describe('Social (e2e)', () => {
       challengerScore: expect.any(Number),
       opponentScore: expect.any(Number),
     });
+  });
+
+  it('scores the challenger when they complete a quest (XP metric)', async () => {
+    const quest = await request(http)
+      .post(`${api}/quests`)
+      .set(bearer(u1.token))
+      .send({ title: 'Duel grind', cadence: 'DAILY', difficulty: 'HARD' });
+    await request(http)
+      .post(`${api}/quests/${quest.body.data.id}/complete`)
+      .set(bearer(u1.token));
+
+    const standings = await request(http)
+      .get(`${api}/pvp/${challengeId}/standings`)
+      .set(bearer(u1.token));
+    expect(standings.body.data.challengerScore).toBeGreaterThan(0);
   });
 });

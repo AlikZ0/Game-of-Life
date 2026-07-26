@@ -107,11 +107,15 @@ export class AuthService {
   ): Promise<AuthTokensDto> {
     let user = await this.users.findByProvider(provider, profile.providerId);
     if (!user) {
+      // Apple may omit the email on repeat logins; for a brand-new account
+      // fall back to a stable private-relay-style address keyed by the subject.
+      const email =
+        profile.email || `${profile.providerId}@privaterelay.appleid.com`;
       // Link to an existing email account if present, else create.
       user =
-        (await this.users.findByEmail(profile.email)) ??
+        (profile.email ? await this.users.findByEmail(profile.email) : null) ??
         (await this.users.create({
-          email: profile.email,
+          email,
           provider,
           providerId: profile.providerId,
           emailVerified: profile.emailVerified,

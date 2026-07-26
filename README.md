@@ -179,13 +179,12 @@ CI (backend build + lint + tests, Docker image build, Flutter analyze) is green.
 
 ### ✅ Done & working
 - **Docs (9):** architecture, DB schema, ER diagrams, API reference, game-design bible, wireframes, roadmap, deployment, folder structure.
-- **Backend core loop (real, tested):** email/Google auth with JWT access+rotating refresh · character creation & the atomic progression engine (XP → levels, gold ledger, skill XP, energy) · quests CRUD + idempotent per-period completion · exponential leveling & difficulty/streak reward math (unit-tested) · skills + heatmap · streaks with milestones/freezes · bosses (HP + defeat rewards) · achievements (tiered catalog + unlock engine) · shop/inventory with gold spending · stats dashboard · rule-based AI Coach.
+- **Backend core loop (real, tested):** email/Google/Apple auth with JWT access+rotating refresh · character creation & the atomic progression engine (XP → levels, gold ledger, skill XP, energy) · quests CRUD + idempotent per-period completion · exponential leveling & difficulty/streak reward math (unit-tested) · skills + heatmap · streaks with milestones/freezes · bosses (HP + defeat rewards) · achievements (tiered catalog + unlock engine) · shop/inventory with gold spending · stats dashboard · rule-based AI Coach.
 - **Backend scaffolded (endpoints + services, lighter logic):** guilds & PvP, notifications (FCM-gated), Battle Pass, Stripe subscription (defensive/optional), realtime WebSocket gateway, BullMQ worker.
 - **Mobile (120 Dart files, 15 feature areas):** premium dark-first design system, clean architecture, flagship auth / character creation / quest dashboard / boss detail screens; other features have real structure + UI.
 - **Infra:** multi-stage Docker build, docker-compose, Nginx, Kubernetes base + staging/prod overlays, GitHub Actions CI/CD, initial Prisma migration.
 
 ### 🔨 Partial / stubbed (clear TODOs in code)
-- Apple Sign-In token verification (Google is fully implemented).
 - AI Coach LLM enrichment (rule-based engine works today; LLM path is gated behind Premium).
 - Guild chat / live leaderboards / PvP scoring are wired but not fully real-time-driven yet.
 - Billing: Stripe webhook handling is defensive; Apple IAP / Google Play Billing are not yet integrated.

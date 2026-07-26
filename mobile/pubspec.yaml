@@ -11,6 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Localization
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
   # State management
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
@@ -33,7 +38,6 @@ dependencies:
   # UI / design
   google_fonts: ^6.2.1
   fl_chart: ^0.68.0
-  intl: ^0.19.0
 
   # Auth providers
   google_sign_in: ^6.2.1
@@ -56,6 +60,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
   assets:
     - assets/images/
     - assets/icons/

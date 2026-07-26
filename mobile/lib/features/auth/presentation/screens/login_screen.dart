@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:life_quest/l10n/app_localizations.dart';
+
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -42,6 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(authControllerProvider);
 
     // Surface auth errors as a snackbar.
@@ -66,10 +69,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: AppSpacing.huge),
                   const _BrandMark(),
                   AppSpacing.vXxl,
-                  Text('Welcome back, hero', style: text.displayMedium),
+                  Text(l10n.welcomeBack, style: text.displayMedium),
                   AppSpacing.gapXs,
                   Text(
-                    'Your quests are waiting. Sign in to keep the streak alive.',
+                    l10n.questsWaitingSubtitle,
                     style: text.bodyMedium?.copyWith(color: AppColors.textSecondaryDark),
                   ),
                   const SizedBox(height: AppSpacing.xxxl),
@@ -83,9 +86,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.mail_outline_rounded),
+                          decoration: InputDecoration(
+                            labelText: l10n.email,
+                            prefixIcon: const Icon(Icons.mail_outline_rounded),
                           ),
                           validator: _validateEmail,
                         ),
@@ -97,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           autofillHints: const [AutofillHints.password],
                           onFieldSubmitted: (_) => _submit(),
                           decoration: InputDecoration(
-                            labelText: 'Password',
+                            labelText: l10n.password,
                             prefixIcon: const Icon(Icons.lock_outline_rounded),
                             suffixIcon: IconButton(
                               icon: Icon(_obscure
@@ -107,13 +110,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                           validator: (v) =>
-                              (v == null || v.length < 8) ? 'Min. 8 characters' : null,
+                              (v == null || v.length < 8) ? l10n.passwordTooShort : null,
                         ),
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () {},
-                            child: const Text('Forgot password?'),
+                            child: Text(l10n.forgotPassword),
                           ),
                         ),
                       ],
@@ -121,7 +124,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   AppSpacing.vMd,
                   PrimaryButton(
-                    label: 'Sign in',
+                    label: l10n.signIn,
                     icon: Icons.bolt_rounded,
                     isLoading: state.isSubmitting,
                     onPressed: _submit,
@@ -130,13 +133,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const _OrDivider(),
                   const SizedBox(height: AppSpacing.xxl),
                   SocialAuthButton(
-                    label: 'Continue with Google',
+                    label: l10n.signInWithGoogle,
                     icon: Icons.g_mobiledata_rounded,
                     onPressed: ref.read(authControllerProvider.notifier).loginWithGoogle,
                   ),
                   AppSpacing.vMd,
                   SocialAuthButton(
-                    label: 'Continue with Apple',
+                    label: l10n.signInWithApple,
                     icon: Icons.apple_rounded,
                     onPressed: ref.read(authControllerProvider.notifier).loginWithApple,
                   ),
@@ -144,10 +147,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("New to Life Quest?", style: text.bodyMedium),
+                      Text(l10n.newToLifeQuest, style: text.bodyMedium),
                       TextButton(
                         onPressed: () => context.pushNamed(AppRoute.register.name),
-                        child: const Text('Create a hero'),
+                        child: Text(l10n.createHero),
                       ),
                     ],
                   ),
@@ -162,9 +165,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   String? _validateEmail(String? v) {
-    if (v == null || v.isEmpty) return 'Email is required';
+    final l10n = AppLocalizations.of(context);
+    if (v == null || v.isEmpty) return l10n.emailRequired;
     final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim());
-    return ok ? null : 'Enter a valid email';
+    return ok ? null : l10n.emailInvalid;
   }
 }
 
@@ -192,7 +196,8 @@ class _BrandMark extends StatelessWidget {
           child: const Icon(Icons.shield_moon_rounded, color: Colors.white, size: 30),
         ),
         AppSpacing.hMd,
-        Text('Life Quest', style: Theme.of(context).textTheme.headlineMedium),
+        Text(AppLocalizations.of(context).appName,
+            style: Theme.of(context).textTheme.headlineMedium),
       ],
     );
   }
@@ -209,7 +214,8 @@ class _OrDivider extends StatelessWidget {
         Expanded(child: Divider(color: color)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: Text('or', style: Theme.of(context).textTheme.labelSmall),
+          child: Text(AppLocalizations.of(context).orDivider,
+              style: Theme.of(context).textTheme.labelSmall),
         ),
         Expanded(child: Divider(color: color)),
       ],

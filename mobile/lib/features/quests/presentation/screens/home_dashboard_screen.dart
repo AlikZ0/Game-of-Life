@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:life_quest/l10n/app_localizations.dart';
+
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -38,6 +40,7 @@ class HomeDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final character = ref.watch(myCharacterProvider);
     final quests = ref.watch(questsControllerProvider);
     final filter = ref.watch(questCadenceFilterProvider);
@@ -47,7 +50,7 @@ class HomeDashboardScreen extends ConsumerWidget {
         onPressed: () => QuestEditSheet.show(context),
         backgroundColor: AppColors.accent,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('New quest', style: TextStyle(color: Colors.white)),
+        label: Text(l10n.newQuest, style: const TextStyle(color: Colors.white)),
       ),
       body: RefreshIndicator(
         color: AppColors.accent,
@@ -124,18 +127,19 @@ class _Greeting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final hour = DateTime.now().hour;
     final greeting = hour < 12
-        ? 'Good morning'
+        ? l10n.greetingMorning
         : hour < 18
-            ? 'Good afternoon'
-            : 'Good evening';
+            ? l10n.greetingAfternoon
+            : l10n.greetingEvening;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(greeting, style: Theme.of(context).textTheme.bodySmall),
-        Text('Your quests', style: Theme.of(context).textTheme.headlineMedium),
+        Text(l10n.todaysQuests, style: Theme.of(context).textTheme.headlineMedium),
       ],
     );
   }
@@ -146,11 +150,12 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final actions = <(IconData, String, AppRoute, Color)>[
-      (Icons.local_fire_department_rounded, 'Bosses', AppRoute.bosses, AppColors.tertiary),
-      (Icons.storefront_rounded, 'Shop', AppRoute.shop, AppColors.gold),
-      (Icons.psychology_rounded, 'AI Coach', AppRoute.aiCoach, AppColors.secondary),
-      (Icons.workspace_premium_rounded, 'Pass', AppRoute.battlePass, AppColors.accent),
+      (Icons.local_fire_department_rounded, l10n.navBosses, AppRoute.bosses, AppColors.tertiary),
+      (Icons.storefront_rounded, l10n.quickShop, AppRoute.shop, AppColors.gold),
+      (Icons.psychology_rounded, l10n.quickAiCoach, AppRoute.aiCoach, AppColors.secondary),
+      (Icons.workspace_premium_rounded, l10n.quickPass, AppRoute.battlePass, AppColors.accent),
     ];
     return Row(
       children: [
@@ -216,7 +221,7 @@ class _CadenceFilter extends StatelessWidget {
       child: Row(
         children: [
           ChoiceChip(
-            label: const Text('All'),
+            label: Text(AppLocalizations.of(context).cadenceAll),
             selected: selected == null,
             onSelected: (_) => onSelected(null),
           ),
@@ -247,10 +252,11 @@ class _QuestList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (quests.isEmpty) {
-      return const EmptyView(
-        title: 'No quests yet',
-        subtitle: 'Tap “New quest” to turn a habit into an adventure.',
+      return EmptyView(
+        title: l10n.emptyQuests,
+        subtitle: l10n.emptyQuestsSubtitle,
         icon: Icons.explore_rounded,
       );
     }
@@ -268,7 +274,7 @@ class _QuestList extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Completed today (${done.length})',
+              l10n.completedToday(done.length),
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -36,6 +37,7 @@ class ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Center(
@@ -44,12 +46,12 @@ class ErrorView extends StatelessWidget {
           children: [
             const Icon(Icons.wifi_tethering_error_rounded, size: 48, color: AppColors.danger),
             AppSpacing.vLg,
-            Text('Something went wrong', style: text.titleMedium, textAlign: TextAlign.center),
+            Text(l10n.loadingError, style: text.titleMedium, textAlign: TextAlign.center),
             AppSpacing.gapXs,
             Text(message, style: text.bodySmall, textAlign: TextAlign.center),
             if (onRetry != null) ...[
               AppSpacing.vXl,
-              PrimaryButton(label: 'Try again', icon: Icons.refresh_rounded, expand: false, onPressed: onRetry),
+              PrimaryButton(label: l10n.retry, icon: Icons.refresh_rounded, expand: false, onPressed: onRetry),
             ],
           ],
         ),

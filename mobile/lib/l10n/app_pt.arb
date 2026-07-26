@@ -1,0 +1,83 @@
+{
+  "@@locale": "pt",
+
+  "appName": "Life Quest",
+
+  "welcomeBack": "Bem-vindo de volta, herói",
+  "questsWaitingSubtitle": "Suas missões estão à espera. Entre para manter a sequência viva.",
+
+  "email": "E-mail",
+  "password": "Senha",
+  "confirmPassword": "Confirmar senha",
+  "forgotPassword": "Esqueceu a senha?",
+  "signIn": "Entrar",
+  "signInWithGoogle": "Continuar com o Google",
+  "signInWithApple": "Continuar com a Apple",
+  "orDivider": "ou",
+  "newToLifeQuest": "Novo no Life Quest?",
+  "createHero": "Criar um herói",
+
+  "emailRequired": "O e-mail é obrigatório",
+  "emailInvalid": "Insira um e-mail válido",
+  "passwordTooShort": "Mín. 8 caracteres",
+  "passwordsDoNotMatch": "As senhas não coincidem",
+
+  "createYourHero": "Crie o seu herói",
+  "startYourJourney": "Comece a sua jornada",
+  "registerSubtitle": "Uma conta, missões infinitas. O XP está à espera.",
+  "agreeToTerms": "Concordo com os Termos e a Política de Privacidade",
+  "createAccount": "Criar conta",
+  "acceptTermsPrompt": "Aceite os termos para continuar.",
+
+  "heroPreviewName": "Seu herói",
+  "heroName": "Dê um nome ao seu herói",
+  "heroNameHint": "ex. Aria Stormblade",
+  "chooseAvatar": "Escolha um avatar",
+  "chooseClass": "Escolha a sua classe",
+  "beginJourney": "Entrar no reino",
+
+  "newQuest": "Nova missão",
+  "greetingMorning": "Bom dia",
+  "greetingAfternoon": "Boa tarde",
+  "greetingEvening": "Boa noite",
+  "todaysQuests": "Suas missões",
+  "cadenceAll": "Todas",
+  "emptyQuests": "Ainda não há missões",
+  "emptyQuestsSubtitle": "Toque em “Nova missão” para transformar um hábito numa aventura.",
+  "completedToday": "Concluídas hoje ({count})",
+
+  "quickShop": "Loja",
+  "quickAiCoach": "Coach de IA",
+  "quickPass": "Passe",
+
+  "navQuests": "Missões",
+  "navSkills": "Habilidades",
+  "navBosses": "Chefes",
+  "navSocial": "Social",
+  "navProfile": "Perfil",
+
+  "settingsTitle": "Configurações",
+  "sectionAppearance": "Aparência",
+  "theme": "Tema",
+  "themeSystem": "Sistema",
+  "themeDark": "Escuro",
+  "themeLight": "Claro",
+  "sectionNotifications": "Notificações",
+  "questReminders": "Lembretes de missões",
+  "questRemindersSubtitle": "Avisos quando uma sequência está em risco",
+  "sectionAccount": "Conta",
+  "privacyPolicy": "Política de Privacidade",
+  "sectionAbout": "Sobre",
+  "version": "Versão",
+  "logout": "Sair",
+  "language": "Idioma",
+  "languageSystem": "Sistema",
+
+  "cancel": "Cancelar",
+  "save": "Salvar",
+  "retry": "Tentar novamente",
+  "loadingError": "Algo deu errado",
+
+  "level": "Nível {level}",
+  "streakDays": "{count, plural, =0{Sem sequência ainda} one{Sequência de {count} dia} other{Sequência de {count} dias}}"
+}

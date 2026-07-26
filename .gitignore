@@ -27,6 +27,7 @@ mobile/.packages
 mobile/pubspec.lock
 **/*.g.dart
 **/*.freezed.dart
+mobile/lib/l10n/app_localizations*.dart
 
 # ─── Infra / secrets ────────────────────────────
 infra/k8s/**/secret.yaml

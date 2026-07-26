@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -19,6 +20,7 @@ class CharacterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final c = character;
 
     return GestureDetector(
@@ -53,7 +55,7 @@ class CharacterCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        c.activeTitle ?? '${c.characterClass.label} • Lvl ${c.level}',
+                        c.activeTitle ?? '${c.characterClass.label} • ${l10n.level(c.level)}',
                         style: text.bodySmall?.copyWith(color: Colors.white70),
                       ),
                     ],

@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from '../config/configuration';
 import { validateEnv } from '../config/env.validation';
 import { PrismaModule } from '../infra/prisma/prisma.module';
+import { RedisModule } from '../infra/redis/redis.module';
 import { AchievementsModule } from '../modules/achievements/achievements.module';
 import { CharacterModule } from '../modules/character/character.module';
 import { GAMIFICATION_QUEUE } from '../modules/gamification/gamification.constants';
@@ -34,6 +35,7 @@ import { GamificationProcessor } from './processors/gamification.processor';
     }),
     BullModule.registerQueue({ name: GAMIFICATION_QUEUE }),
     PrismaModule,
+    RedisModule,
     CharacterModule,
     AchievementsModule,
     NotificationsModule,

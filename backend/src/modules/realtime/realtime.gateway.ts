@@ -108,6 +108,12 @@ export class RealtimeGateway
     this.server?.to(`character:${characterId}`).emit('boss-defeated', payload);
   }
 
+  emitAchievementUnlocked(characterId: string, payload: unknown): void {
+    this.server
+      ?.to(`character:${characterId}`)
+      .emit('achievement-unlocked', payload);
+  }
+
   emitGuildMessage(guildId: string, payload: unknown): void {
     this.server?.to(`guild:${guildId}`).emit('guild:message', payload);
   }

@@ -6,7 +6,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { LedgerReason, Prisma, Quest, QuestCadence } from '@prisma/client';
+import {
+  LedgerReason,
+  Prisma,
+  PvpMetric,
+  Quest,
+  QuestCadence,
+} from '@prisma/client';
 import { Queue } from 'bullmq';
 import { periodKeyFor } from '../../../common/utils/period';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
@@ -23,6 +29,7 @@ import {
 import { BattlePassService } from '../../monetization/application/battle-pass.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import { GuildsService } from '../../social/application/guilds.service';
+import { PvpService } from '../../social/application/pvp.service';
 import { StreaksService } from '../../streaks/application/streaks.service';
 import { QUEST_REPOSITORY, QuestRepository } from '../domain/quest.repository';
 import {
@@ -42,6 +49,7 @@ export class QuestsService {
     private readonly streaks: StreaksService,
     private readonly realtime: RealtimeGateway,
     private readonly guilds: GuildsService,
+    private readonly pvp: PvpService,
     private readonly battlePass: BattlePassService,
     @InjectQueue(GAMIFICATION_QUEUE)
     private readonly gamificationQueue: Queue<GamificationJob>,
@@ -215,6 +223,15 @@ export class QuestsService {
       .catch(() => undefined);
     // Advance the seasonal Battle Pass (no-op when no season is active).
     await this.battlePass.addXp(characterId, reward.xp).catch(() => undefined);
+    // Score any active PvP duels this counts toward (XP + quests-completed).
+    await Promise.all([
+      this.pvp
+        .recordProgress(characterId, PvpMetric.XP, reward.xp)
+        .catch(() => undefined),
+      this.pvp
+        .recordProgress(characterId, PvpMetric.QUESTS_COMPLETED, 1)
+        .catch(() => undefined),
+    ]);
 
     return {
       questId: quest.id,

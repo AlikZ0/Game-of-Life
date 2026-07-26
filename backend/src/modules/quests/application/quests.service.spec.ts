@@ -60,6 +60,9 @@ describe('QuestsService.complete side-effects', () => {
     const guilds = {
       recordWeeklyXp: jest.fn().mockResolvedValue(undefined),
     };
+    const pvp = {
+      recordProgress: jest.fn().mockResolvedValue(undefined),
+    };
     const battlePass = {
       addXp: jest.fn().mockResolvedValue(undefined),
     };
@@ -72,10 +75,20 @@ describe('QuestsService.complete side-effects', () => {
       streaks as never,
       realtime as never,
       guilds as never,
+      pvp as never,
       battlePass as never,
       queue as never,
     );
-    return { service, realtime, queue, characters, bosses, guilds, battlePass };
+    return {
+      service,
+      realtime,
+      queue,
+      characters,
+      bosses,
+      guilds,
+      pvp,
+      battlePass,
+    };
   }
 
   it('emits level-up when the character gains a level', async () => {

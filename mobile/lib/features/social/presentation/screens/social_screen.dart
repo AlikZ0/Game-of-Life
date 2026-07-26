@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -13,9 +14,10 @@ class SocialScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Social')),
+      appBar: AppBar(title: Text(l10n.navSocial)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
@@ -41,7 +43,7 @@ class SocialScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.emoji_events_rounded, color: AppColors.gold),
                 AppSpacing.hMd,
-                Expanded(child: Text('Global leaderboards', style: text.titleSmall)),
+                Expanded(child: Text(l10n.globalLeaderboards, style: text.titleSmall)),
                 const Icon(Icons.chevron_right_rounded),
               ],
             ),

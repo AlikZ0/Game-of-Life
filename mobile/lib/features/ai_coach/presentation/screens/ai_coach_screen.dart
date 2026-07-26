@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -15,10 +16,11 @@ class AiCoachScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final analysis = ref.watch(coachAnalysisProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Coach')),
+      appBar: AppBar(title: Text(l10n.quickAiCoach)),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(coachAnalysisProvider),
         child: analysis.when(
@@ -48,7 +50,7 @@ class AiCoachScreen extends ConsumerWidget {
                 AppSpacing.vXl,
               ],
               if (a.suggestedQuests.isNotEmpty) ...[
-                Text('Suggested quests', style: Theme.of(context).textTheme.titleMedium),
+                Text(l10n.suggestedQuests, style: Theme.of(context).textTheme.titleMedium),
                 AppSpacing.vLg,
                 for (final q in a.suggestedQuests) ...[
                   _SuggestedQuestCard(quest: q),

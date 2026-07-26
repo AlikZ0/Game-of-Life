@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -17,6 +18,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final character = ref.watch(myCharacterProvider);
 
     final menu = <(IconData, String, AppRoute)>[
@@ -30,7 +32,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(l10n.navProfile),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_rounded),
@@ -55,12 +57,12 @@ class ProfileScreen extends ConsumerWidget {
                 const Icon(Icons.workspace_premium_rounded, color: Colors.black),
                 AppSpacing.hMd,
                 Expanded(
-                  child: Text('Go Premium — unlock the full journey',
+                  child: Text(l10n.goPremium,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.black)),
                 ),
                 TextButton(
                   onPressed: () => context.pushNamed(AppRoute.paywall.name),
-                  child: const Text('Upgrade', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                  child: Text(l10n.upgrade, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
                 ),
               ],
             ),
@@ -78,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
             icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
-            label: const Text('Sign out', style: TextStyle(color: AppColors.danger)),
+            label: Text(l10n.logout, style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),

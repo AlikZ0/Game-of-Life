@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -26,6 +27,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -51,11 +53,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     children: [
                       const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 64),
                       AppSpacing.vMd,
-                      Text('Life Quest Premium',
+                      Text(l10n.premiumTitle,
                           style: text.displaySmall?.copyWith(color: Colors.white),
                           textAlign: TextAlign.center),
                       AppSpacing.gapXs,
-                      Text('Unlock everything and level up faster.',
+                      Text(l10n.premiumSubtitle,
                           style: text.bodyMedium?.copyWith(color: Colors.white70),
                           textAlign: TextAlign.center),
                       const SizedBox(height: AppSpacing.huge),
@@ -84,7 +86,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                       ),
                       AppSpacing.vMd,
                       Center(
-                        child: Text('Cancel anytime. Terms apply.', style: text.labelSmall),
+                        child: Text(l10n.cancelAnytime, style: text.labelSmall),
                       ),
                       AppSpacing.vXl,
                     ],

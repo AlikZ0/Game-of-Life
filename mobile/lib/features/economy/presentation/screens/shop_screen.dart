@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -18,7 +19,7 @@ class ShopScreen extends ConsumerWidget {
       await ref.read(redeemRewardProvider)(id);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reward redeemed! Enjoy it — you earned it.')),
+          SnackBar(content: Text(AppLocalizations.of(context).rewardRedeemed)),
         );
       }
     } catch (e) {
@@ -30,12 +31,13 @@ class ShopScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final rewards = ref.watch(shopRewardsProvider);
     final gold = ref.watch(myCharacterProvider).valueOrNull?.gold ?? 0;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shop'),
+        title: Text(l10n.quickShop),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.lg),

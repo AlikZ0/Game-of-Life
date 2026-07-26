@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -14,15 +15,16 @@ class PvpScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final challenges = ref.watch(pvpChallengesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('PvP Arena')),
+      appBar: AppBar(title: Text(l10n.pvpArenaTitle)),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.tertiary,
         onPressed: () {},
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('New challenge', style: TextStyle(color: Colors.white)),
+        label: Text(l10n.newChallenge, style: const TextStyle(color: Colors.white)),
       ),
       body: challenges.when(
         loading: () => const LoadingView(),
@@ -69,7 +71,7 @@ class _ChallengeCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('vs ${c.opponentName}', style: text.titleSmall),
+              Text(AppLocalizations.of(context).vsOpponent(c.opponentName), style: text.titleSmall),
               Chip(label: Text(Formatters.enumLabel(c.metric))),
             ],
           ),

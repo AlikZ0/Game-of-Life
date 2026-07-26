@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -16,18 +17,19 @@ class GuildScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final guild = ref.watch(myGuildProvider);
 
     return guild.when(
       loading: () => const Scaffold(body: LoadingView()),
       error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('Guild')),
+        appBar: AppBar(title: Text(l10n.guildTitle)),
         body: ErrorView(message: e.toString(), onRetry: () => ref.invalidate(myGuildProvider)),
       ),
       data: (g) {
         if (g == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Guild')),
+            appBar: AppBar(title: Text(l10n.guildTitle)),
             body: const EmptyView(
               title: "You're not in a guild yet",
               subtitle: 'Join or create a guild to tackle shared missions and climb leaderboards.',

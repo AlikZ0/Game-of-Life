@@ -12,6 +12,7 @@ import {
   PvpMetric,
   PvpStatus,
 } from '@prisma/client';
+import { LockService } from '../../../infra/redis/lock.service';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { CharacterService } from '../../character/application/character.service';
 import { CreatePvpChallengeDto } from './dto/pvp.dto';
@@ -34,6 +35,7 @@ export class PvpService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly characters: CharacterService,
+    private readonly locks: LockService,
   ) {}
 
   /** Create a PENDING challenge with a 7-day window derived from "now". */
@@ -191,19 +193,22 @@ export class PvpService {
    */
   @Cron(CronExpression.EVERY_HOUR)
   async finalizeDueChallenges(): Promise<void> {
-    const now = new Date();
-    const due = await this.prisma.pvpChallenge.findMany({
-      where: { status: PvpStatus.ACTIVE, endAt: { lt: now } },
-      select: { id: true },
+    // Single-flight across replicas: only the holder of the lock runs the sweep.
+    await this.locks.withLock('pvp:finalize', 55 * 60 * 1000, async () => {
+      const now = new Date();
+      const due = await this.prisma.pvpChallenge.findMany({
+        where: { status: PvpStatus.ACTIVE, endAt: { lt: now } },
+        select: { id: true },
+      });
+      for (const { id } of due) {
+        await this.finalize(id).catch((err) =>
+          this.logger.warn(`Failed to finalize ${id}: ${String(err)}`),
+        );
+      }
+      if (due.length) {
+        this.logger.log(`Finalized ${due.length} due PvP challenge(s)`);
+      }
     });
-    for (const { id } of due) {
-      await this.finalize(id).catch((err) =>
-        this.logger.warn(`Failed to finalize ${id}: ${String(err)}`),
-      );
-    }
-    if (due.length) {
-      this.logger.log(`Finalized ${due.length} due PvP challenge(s)`);
-    }
   }
 
   private decideWinner(c: PvpChallenge): string | null {

@@ -9,8 +9,15 @@ describe('ReminderService', () => {
       quest: { findMany: jest.fn().mockResolvedValue(rows) },
     };
     const notifications = { send: jest.fn().mockResolvedValue(undefined) };
+    const locks = {
+      withLock: jest.fn((_k: string, _ttl: number, fn: () => unknown) => fn()),
+    };
     return {
-      service: new ReminderService(prisma as never, notifications as never),
+      service: new ReminderService(
+        prisma as never,
+        notifications as never,
+        locks as never,
+      ),
       prisma,
       notifications,
     };

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { LockService } from '../../../infra/redis/lock.service';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { periodKeyFor } from '../../../common/utils/period';
 import { NotificationsService } from './notifications.service';
@@ -17,26 +18,30 @@ export class ReminderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly locks: LockService,
   ) {}
 
   /** Every evening, remind users who still have an open daily quest. */
   @Cron(CronExpression.EVERY_DAY_AT_6PM)
   async sendDailyReminders(): Promise<void> {
-    const userIds = await this.usersNeedingReminder();
-    if (userIds.length === 0) return;
+    // Only one replica sends the batch (lock held for the hour of the tick).
+    await this.locks.withLock('reminders:daily', 60 * 60 * 1000, async () => {
+      const userIds = await this.usersNeedingReminder();
+      if (userIds.length === 0) return;
 
-    this.logger.log(`Sending daily reminders to ${userIds.length} user(s)`);
-    await Promise.all(
-      userIds.map((userId) =>
-        this.notifications
-          .send(userId, {
-            title: 'Your quests are waiting ⚔️',
-            body: 'You still have a daily quest to finish — keep your streak alive!',
-            data: { type: 'daily_reminder' },
-          })
-          .catch(() => undefined),
-      ),
-    );
+      this.logger.log(`Sending daily reminders to ${userIds.length} user(s)`);
+      await Promise.all(
+        userIds.map((userId) =>
+          this.notifications
+            .send(userId, {
+              title: 'Your quests are waiting ⚔️',
+              body: 'You still have a daily quest to finish — keep your streak alive!',
+              data: { type: 'daily_reminder' },
+            })
+            .catch(() => undefined),
+        ),
+      );
+    });
   }
 
   /**

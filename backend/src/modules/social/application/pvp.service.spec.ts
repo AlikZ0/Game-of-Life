@@ -16,7 +16,15 @@ describe('PvpService scoring & finalize', () => {
       },
     };
     const characters = { awardRewards: jest.fn().mockResolvedValue({}) };
-    const service = new PvpService(prisma as never, characters as never);
+    // Lock is a pass-through in tests so the guarded cron body actually runs.
+    const locks = {
+      withLock: jest.fn((_k: string, _ttl: number, fn: () => unknown) => fn()),
+    };
+    const service = new PvpService(
+      prisma as never,
+      characters as never,
+      locks as never,
+    );
     return { service, prisma, characters };
   }
 

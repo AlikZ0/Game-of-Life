@@ -14,6 +14,10 @@ class SkillRepositoryImpl implements SkillRepository {
       });
 
   @override
-  Future<Result<List<SkillHeatCell>>> getHistory(String skillId) =>
-      guardResult(() => _remote.history(skillId));
+  Future<Result<List<SkillHeatCell>>> getHeatmap({int days = 90}) =>
+      guardResult(() => _remote.heatmap(days: days));
+
+  @override
+  Future<Result<SkillHistory>> getHistory(String skillKey) =>
+      guardResult(() => _remote.history(skillKey));
 }

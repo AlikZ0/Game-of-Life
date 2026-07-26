@@ -19,12 +19,16 @@ final skillsProvider = FutureProvider<List<Skill>>((ref) async {
   return result.fold(onSuccess: (s) => s, onFailure: (e) => throw e);
 });
 
-/// Aggregated activity heatmap across all skills for the last ~90 days.
+/// Aggregated activity heatmap across all skills for the last ~90 days,
+/// sourced from the dedicated `/skills/heatmap` endpoint.
 final skillHeatmapProvider = FutureProvider<List<SkillHeatCell>>((ref) async {
-  final skills = await ref.watch(skillsProvider.future);
-  if (skills.isEmpty) return const [];
-  // For the overview we sample the top skill's history; per-skill drilldowns
-  // request their own series.
-  final result = await ref.watch(skillRepositoryProvider).getHistory(skills.first.id);
+  final result = await ref.watch(skillRepositoryProvider).getHeatmap();
   return result.fold(onSuccess: (h) => h, onFailure: (_) => const []);
+});
+
+/// A single skill's XP-event history, keyed by the skill's KEY.
+final skillHistoryProvider =
+    FutureProvider.family<SkillHistory, String>((ref, skillKey) async {
+  final result = await ref.watch(skillRepositoryProvider).getHistory(skillKey);
+  return result.fold(onSuccess: (h) => h, onFailure: (e) => throw e);
 });

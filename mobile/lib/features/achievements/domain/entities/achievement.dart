@@ -15,7 +15,8 @@ class Achievement {
     required this.rewardXp,
     required this.rewardGold,
     required this.progress,
-    this.unlockedAt,
+    required this.unlocked,
+    this.criteria,
     this.isSecret = false,
   });
 
@@ -30,10 +31,15 @@ class Achievement {
 
   /// 0..1 completion for tiered achievements.
   final double progress;
-  final DateTime? unlockedAt;
+
+  /// Whether the character has unlocked this achievement.
+  final bool unlocked;
+
+  /// The raw unlock criteria (metric/threshold), as delivered by the API.
+  final Map<String, dynamic>? criteria;
   final bool isSecret;
 
-  bool get isUnlocked => unlockedAt != null || progress >= 1;
+  bool get isUnlocked => unlocked || progress >= 1;
 
   Color get rarityColor => AppColors.rarity[rarity] ?? AppColors.rarity['BRONZE']!;
 }

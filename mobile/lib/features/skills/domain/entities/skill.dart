@@ -39,3 +39,27 @@ class SkillHeatCell {
   final DateTime day;
   final int xp;
 }
+
+/// A single XP-award event in a skill's history. Mirrors Prisma `SkillEvent`.
+class SkillEvent {
+  const SkillEvent({
+    required this.id,
+    required this.skillId,
+    required this.amount,
+    required this.source,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String skillId;
+  final int amount;
+  final String source;
+  final DateTime createdAt;
+}
+
+/// The XP-event history for a single skill, keyed by skill key.
+class SkillHistory {
+  const SkillHistory({required this.skillKey, required this.events});
+  final String skillKey;
+  final List<SkillEvent> events;
+}

@@ -6,44 +6,12 @@ import '../../domain/entities/guild.dart';
 import '../../domain/entities/pvp_challenge.dart';
 
 /// The authenticated character's guild, if they belong to one. Returns null
-/// when the user is not in a guild (404 mapped to null).
-final myGuildProvider = FutureProvider<Guild?>((ref) async {
-  final dio = ref.watch(dioProvider);
-  final res = await dio.get<Map<String, dynamic>>(ApiEndpoints.guildMe);
-  final data = res.data;
-  if (data == null || data.isEmpty) return null;
-
-  return Guild(
-    id: data['id'] as String,
-    name: data['name'] as String,
-    tag: data['tag'] as String? ?? '',
-    description: data['description'] as String?,
-    level: (data['level'] as num?)?.toInt() ?? 1,
-    memberCount: (data['memberCount'] as num?)?.toInt() ?? 0,
-    members: [
-      for (final m in (data['members'] ?? const []) as List<dynamic>)
-        GuildMember(
-          characterId: m['characterId'] as String,
-          name: m['name'] as String? ?? 'Member',
-          role: m['role'] as String? ?? 'MEMBER',
-          weeklyXp: (m['weeklyXp'] as num?)?.toInt() ?? 0,
-          level: (m['level'] as num?)?.toInt() ?? 1,
-        ),
-    ],
-    missions: [
-      for (final m in (data['missions'] ?? const []) as List<dynamic>)
-        GuildMission(
-          id: m['id'] as String,
-          title: m['title'] as String,
-          targetValue: (m['targetValue'] as num).toInt(),
-          currentValue: (m['currentValue'] as num?)?.toInt() ?? 0,
-          metric: m['metric'] as String? ?? 'XP',
-          rewardGold: (m['rewardGold'] as num?)?.toInt() ?? 0,
-          expiresAt: DateTime.tryParse(m['expiresAt'] as String? ?? '') ?? DateTime.now(),
-        ),
-    ],
-  );
-});
+/// when the user is not in a guild.
+///
+/// The backend exposes no `GET /guilds/me`; membership is surfaced through the
+/// character profile, so until that wiring lands this resolves to "no guild"
+/// and the screen renders its join/create empty state.
+final myGuildProvider = FutureProvider<Guild?>((ref) async => null);
 
 /// The user's active/pending PvP challenges.
 final pvpChallengesProvider = FutureProvider<List<PvpChallenge>>((ref) async {

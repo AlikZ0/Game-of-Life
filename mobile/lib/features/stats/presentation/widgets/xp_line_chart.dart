@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/stats_summary.dart';
+import '../../domain/entities/xp_point.dart';
 
 /// A smooth XP-over-time area line chart built on fl_chart.
 class XpLineChart extends StatelessWidget {

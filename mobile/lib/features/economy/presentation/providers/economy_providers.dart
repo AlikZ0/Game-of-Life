@@ -1,29 +1,29 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/di.dart';
-import '../../../../core/network/api_endpoints.dart';
 import '../../../character/presentation/providers/character_providers.dart';
-import '../../data/models/economy_models.dart';
+import '../../data/datasources/economy_remote_datasource.dart';
+import '../../data/repositories_impl/economy_repository_impl.dart';
 import '../../domain/entities/inventory_item.dart';
 import '../../domain/entities/shop_reward.dart';
+import '../../domain/repositories/economy_repository.dart';
+
+final economyRemoteDataSourceProvider = Provider<EconomyRemoteDataSource>(
+  (ref) => EconomyRemoteDataSource(ref.watch(dioProvider)),
+);
+
+final economyRepositoryProvider = Provider<EconomyRepository>(
+  (ref) => EconomyRepositoryImpl(ref.watch(economyRemoteDataSourceProvider)),
+);
 
 final inventoryProvider = FutureProvider<List<InventoryItem>>((ref) async {
-  final dio = ref.watch(dioProvider);
-  final res = await dio.get<Map<String, dynamic>>(ApiEndpoints.inventory);
-  final items = (res.data?['data'] ?? const []) as List<dynamic>;
-  return items
-      .map((e) => InventoryItemModel.fromJson(e as Map<String, dynamic>).toEntity())
-      .toList();
+  final result = await ref.watch(economyRepositoryProvider).getInventory();
+  return result.fold(onSuccess: (i) => i, onFailure: (e) => throw e);
 });
 
 final shopRewardsProvider = FutureProvider<List<ShopReward>>((ref) async {
-  final dio = ref.watch(dioProvider);
-  final res = await dio.get<Map<String, dynamic>>(ApiEndpoints.shop);
-  final items = (res.data?['data'] ?? const []) as List<dynamic>;
-  return items
-      .map((e) => ShopRewardModel.fromJson(e as Map<String, dynamic>).toEntity())
-      .toList();
+  final result = await ref.watch(economyRepositoryProvider).getShopRewards();
+  return result.fold(onSuccess: (r) => r, onFailure: (e) => throw e);
 });
 
 /// Redeems a shop reward (spends gold). Refreshes the character header + list.
@@ -34,9 +34,13 @@ class _RedeemReward {
   final Ref _ref;
 
   Future<void> call(String rewardId) async {
-    final Dio dio = _ref.read(dioProvider);
-    await dio.post<void>(ApiEndpoints.redeemReward(rewardId));
-    _ref.invalidate(shopRewardsProvider);
-    _ref.invalidate(myCharacterProvider);
+    final result = await _ref.read(economyRepositoryProvider).redeemReward(rewardId);
+    result.fold(
+      onSuccess: (_) {
+        _ref.invalidate(shopRewardsProvider);
+        _ref.invalidate(myCharacterProvider);
+      },
+      onFailure: (e) => throw e,
+    );
   }
 }

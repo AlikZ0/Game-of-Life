@@ -10,8 +10,8 @@ abstract final class ApiEndpoints {
   static const String register = '/auth/register';
   static const String refresh = '/auth/refresh';
   static const String logout = '/auth/logout';
-  static const String oauthGoogle = '/auth/oauth/google';
-  static const String oauthApple = '/auth/oauth/apple';
+  static const String oauthGoogle = '/auth/google';
+  static const String oauthApple = '/auth/apple';
   static const String me = '/auth/me';
 
   // - Character -
@@ -26,8 +26,9 @@ abstract final class ApiEndpoints {
 
   // - Skills -
   static const String skills = '/skills';
+  static const String skillsHeatmap = '/skills/heatmap';
   static String skill(String id) => '/skills/$id';
-  static String skillHistory(String id) => '/skills/$id/history';
+  static String skillHistory(String key) => '/skills/$key/history';
 
   // - Bosses -
   static const String bosses = '/bosses';
@@ -39,30 +40,43 @@ abstract final class ApiEndpoints {
 
   // - Economy -
   static const String inventory = '/inventory';
-  static const String shop = '/shop/rewards';
-  static String redeemReward(String id) => '/shop/rewards/$id/redeem';
-  static const String goldLedger = '/economy/ledger';
+  static const String shop = '/shop';
+  static String deleteReward(String id) => '/shop/$id';
+  static String redeemReward(String id) => '/shop/$id/redeem';
 
   // - Streaks -
   static const String streak = '/streaks/me';
 
   // - Social -
-  static const String guildMe = '/guilds/me';
+  static const String createGuild = '/guilds';
   static String guild(String id) => '/guilds/$id';
+  static String joinGuild(String id) => '/guilds/$id/join';
+  static String leaveGuild(String id) => '/guilds/$id/leave';
+  static String guildLeaderboard(String id) => '/guilds/$id/leaderboard';
   static String guildMessages(String id) => '/guilds/$id/messages';
   static String guildMissions(String id) => '/guilds/$id/missions';
-  static String guildLeaderboard(String id) => '/guilds/$id/leaderboard';
-  static const String pvpChallenges = '/pvp/challenges';
-  static String pvpChallenge(String id) => '/pvp/challenges/$id';
+
+  // - PvP -
+  static const String pvpChallenges = '/pvp';
+  static const String createPvp = '/pvp';
+  static String acceptPvp(String id) => '/pvp/$id/accept';
+  static String pvpStandings(String id) => '/pvp/$id/standings';
 
   // - Insight -
-  static const String statsSummary = '/stats/summary';
+  static const String statsDashboard = '/stats/dashboard';
   static const String statsXpSeries = '/stats/xp-series';
-  static const String coachSuggestions = '/coach/suggestions';
+  static const String statsLifeBalance = '/stats/life-balance';
+
+  // - AI Coach -
+  static const String coachAnalyze = '/ai-coach/analyze';
+  static const String coachGenerate = '/ai-coach/generate-quests';
 
   // - Monetization -
   static const String battlePass = '/battle-pass/current';
   static String claimBattlePassTier(int tier) => '/battle-pass/claim/$tier';
-  static const String subscription = '/billing/subscription';
-  static const String checkout = '/billing/checkout';
+  static const String subscription = '/subscription';
+  static const String checkout = '/subscription/checkout';
+
+  // - Notifications -
+  static const String notificationsToken = '/notifications/token';
 }

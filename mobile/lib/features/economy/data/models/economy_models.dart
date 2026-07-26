@@ -17,6 +17,8 @@ class InventoryItemModel with _$InventoryItemModel {
     @Default('') String name,
     @Default(1) int quantity,
     @Default(false) bool equipped,
+    Map<String, dynamic>? metadata,
+    @JsonKey(name: 'acquiredAt') DateTime? acquiredAt,
   }) = _InventoryItemModel;
 
   factory InventoryItemModel.fromJson(Map<String, dynamic> json) =>
@@ -45,6 +47,7 @@ class ShopRewardModel with _$ShopRewardModel {
     int? stock,
     @JsonKey(name: 'timesRedeemed') @Default(0) int timesRedeemed,
     @JsonKey(name: 'isActive') @Default(true) bool isActive,
+    @JsonKey(name: 'createdAt') DateTime? createdAt,
   }) = _ShopRewardModel;
 
   factory ShopRewardModel.fromJson(Map<String, dynamic> json) =>

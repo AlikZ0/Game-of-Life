@@ -1,26 +1,32 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/di.dart';
-import '../../../../core/network/api_endpoints.dart';
-import '../../domain/entities/stats_summary.dart';
+import '../../data/datasources/stats_remote_datasource.dart';
+import '../../data/repositories_impl/stats_repository_impl.dart';
+import '../../domain/entities/life_balance.dart';
+import '../../domain/entities/stats_dashboard.dart';
+import '../../domain/entities/xp_point.dart';
+import '../../domain/repositories/stats_repository.dart';
 
-final statsSummaryProvider = FutureProvider<StatsSummary>((ref) async {
-  final dio = ref.watch(dioProvider);
-  final res = await dio.get<Map<String, dynamic>>(ApiEndpoints.statsSummary);
-  final data = res.data ?? const {};
+final statsRemoteDataSourceProvider = Provider<StatsRemoteDataSource>(
+  (ref) => StatsRemoteDataSource(ref.watch(dioProvider)),
+);
 
-  return StatsSummary(
-    questsCompleted: (data['questsCompleted'] as num?)?.toInt() ?? 0,
-    completionRate: (data['completionRate'] as num?)?.toDouble() ?? 0,
-    totalXp: (data['totalXp'] as num?)?.toInt() ?? 0,
-    totalGold: (data['totalGold'] as num?)?.toInt() ?? 0,
-    activeDays: (data['activeDays'] as num?)?.toInt() ?? 0,
-    xpSeries: [
-      for (final p in (data['xpSeries'] ?? const []) as List<dynamic>)
-        XpPoint(
-          day: DateTime.tryParse(p['day'] as String? ?? '') ?? DateTime.now(),
-          xp: (p['xp'] as num?)?.toInt() ?? 0,
-        ),
-    ],
-  );
+final statsRepositoryProvider = Provider<StatsRepository>(
+  (ref) => StatsRepositoryImpl(ref.watch(statsRemoteDataSourceProvider)),
+);
+
+final statsDashboardProvider = FutureProvider<StatsDashboard>((ref) async {
+  final result = await ref.watch(statsRepositoryProvider).getDashboard();
+  return result.fold(onSuccess: (d) => d, onFailure: (e) => throw e);
+});
+
+final statsXpSeriesProvider = FutureProvider<List<XpPoint>>((ref) async {
+  final result = await ref.watch(statsRepositoryProvider).getXpSeries(days: 30);
+  return result.fold(onSuccess: (s) => s, onFailure: (e) => throw e);
+});
+
+final statsLifeBalanceProvider = FutureProvider<List<LifeBalanceSlice>>((ref) async {
+  final result = await ref.watch(statsRepositoryProvider).getLifeBalance();
+  return result.fold(onSuccess: (b) => b, onFailure: (e) => throw e);
 });

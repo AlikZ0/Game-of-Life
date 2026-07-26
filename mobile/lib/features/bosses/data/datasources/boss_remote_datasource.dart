@@ -16,7 +16,7 @@ class BossRemoteDataSource {
 
   Future<BossModel> get(String id) async {
     final res = await _dio.get<Map<String, dynamic>>(ApiEndpoints.boss(id));
-    return BossModel.fromJson(res.data!);
+    return BossModel.fromJson((res.data?['data'] ?? res.data) as Map<String, dynamic>);
   }
 
   /// Quests linked to a boss (each deals damage on completion).
@@ -28,6 +28,6 @@ class BossRemoteDataSource {
 
   Future<BossModel> create(Map<String, dynamic> body) async {
     final res = await _dio.post<Map<String, dynamic>>(ApiEndpoints.bosses, data: body);
-    return BossModel.fromJson(res.data!);
+    return BossModel.fromJson((res.data?['data'] ?? res.data) as Map<String, dynamic>);
   }
 }

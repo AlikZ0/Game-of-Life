@@ -19,7 +19,8 @@ class AchievementModel with _$AchievementModel {
     @JsonKey(name: 'rewardXp') @Default(0) int rewardXp,
     @JsonKey(name: 'rewardGold') @Default(0) int rewardGold,
     @Default(0) double progress,
-    @JsonKey(name: 'unlockedAt') DateTime? unlockedAt,
+    @Default(false) bool unlocked,
+    Map<String, dynamic>? criteria,
     @JsonKey(name: 'isSecret') @Default(false) bool isSecret,
   }) = _AchievementModel;
 
@@ -36,7 +37,8 @@ class AchievementModel with _$AchievementModel {
         rewardXp: rewardXp,
         rewardGold: rewardGold,
         progress: progress,
-        unlockedAt: unlockedAt,
+        unlocked: unlocked,
+        criteria: criteria,
         isSecret: isSecret,
       );
 }

@@ -2,7 +2,10 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AchievementsService } from '../../modules/achievements/application/achievements.service';
+import { RedisService } from '../../infra/redis/redis.service';
 import {
+  ACHIEVEMENT_UNLOCKED_CHANNEL,
+  AchievementUnlockedEvent,
   GAMIFICATION_QUEUE,
   GamificationJob,
 } from '../../modules/gamification/gamification.constants';
@@ -15,7 +18,10 @@ import {
 export class GamificationProcessor extends WorkerHost {
   private readonly logger = new Logger(GamificationProcessor.name);
 
-  constructor(private readonly achievements: AchievementsService) {
+  constructor(
+    private readonly achievements: AchievementsService,
+    private readonly redis: RedisService,
+  ) {
     super();
   }
 
@@ -28,6 +34,7 @@ export class GamificationProcessor extends WorkerHost {
           this.logger.log(
             `Character ${data.characterId} unlocked ${unlocked.length} achievement(s)`,
           );
+          await this.publishUnlocked(data.characterId, unlocked);
         }
         break;
       }
@@ -37,6 +44,34 @@ export class GamificationProcessor extends WorkerHost {
         break;
       default:
         this.logger.warn(`Unknown job type: ${JSON.stringify(job.name)}`);
+    }
+  }
+
+  /**
+   * Publish newly unlocked achievements so the API can push a live toast. The
+   * worker holds no socket connections, so it bridges via Redis pub/sub.
+   * Best-effort: a publish failure must not fail the (already-persisted) job.
+   */
+  private async publishUnlocked(
+    characterId: string,
+    unlocked: Array<{ id: string; name: string; rarity: string; icon: string }>,
+  ): Promise<void> {
+    const event: AchievementUnlockedEvent = {
+      characterId,
+      achievements: unlocked.map((a) => ({
+        id: a.id,
+        name: a.name,
+        rarity: a.rarity,
+        icon: a.icon,
+      })),
+    };
+    try {
+      await this.redis.publish(
+        ACHIEVEMENT_UNLOCKED_CHANNEL,
+        JSON.stringify(event),
+      );
+    } catch (err) {
+      this.logger.warn(`Failed to publish unlock event: ${String(err)}`);
     }
   }
 }

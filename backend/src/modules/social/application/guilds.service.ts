@@ -4,8 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Guild, GuildRole, PvpMetric } from '@prisma/client';
+import { Guild, GuildRole, LedgerReason, PvpMetric } from '@prisma/client';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
+import { CharacterService } from '../../character/application/character.service';
 import { RealtimeGateway } from '../../realtime/realtime.gateway';
 import {
   CreateGuildDto,
@@ -26,6 +27,7 @@ export class GuildsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly realtime: RealtimeGateway,
+    private readonly characters: CharacterService,
   ) {}
 
   /** Create a guild; the creator is enrolled as its LEADER. */
@@ -186,6 +188,74 @@ export class GuildsService {
         weeklyXp: m.weeklyXp,
       })),
     });
+
+    // XP contributions also push the guild's shared XP missions forward.
+    await this.advanceMissions(member.guildId, PvpMetric.XP, xp);
+  }
+
+  /**
+   * Advance a guild's active missions of the given metric by `amount`. Any
+   * mission that reaches its target is marked complete and its gold reward is
+   * granted to every current member (best-effort). Idempotent per mission via
+   * the `completedAt` guard.
+   */
+  async advanceMissions(
+    guildId: string,
+    metric: PvpMetric,
+    amount: number,
+  ): Promise<void> {
+    if (amount <= 0) return;
+    const now = new Date();
+    const missions = await this.prisma.guildMission.findMany({
+      where: {
+        guildId,
+        metric,
+        completedAt: null,
+        expiresAt: { gt: now },
+      },
+    });
+
+    for (const mission of missions) {
+      const newValue = mission.currentValue + amount;
+      const reached = newValue >= mission.targetValue;
+      // Guard completion with `completedAt: null` so concurrent updates only
+      // fire the reward once.
+      const updated = await this.prisma.guildMission.updateMany({
+        where: { id: mission.id, completedAt: null },
+        data: {
+          currentValue: newValue,
+          completedAt: reached ? now : null,
+        },
+      });
+      if (reached && updated.count > 0 && mission.rewardGold > 0) {
+        await this.grantMissionReward(guildId, mission.id, mission.rewardGold);
+      }
+    }
+  }
+
+  /** Split the mission's gold reward to every current guild member. */
+  private async grantMissionReward(
+    guildId: string,
+    missionId: string,
+    rewardGold: number,
+  ): Promise<void> {
+    const members = await this.prisma.guildMember.findMany({
+      where: { guildId },
+      select: { characterId: true },
+    });
+    await Promise.all(
+      members.map((m) =>
+        this.characters
+          .awardRewards({
+            characterId: m.characterId,
+            xp: 0,
+            gold: rewardGold,
+            reason: LedgerReason.GUILD_MISSION,
+            refId: missionId,
+          })
+          .catch(() => undefined),
+      ),
+    );
   }
 
   listMissions(guildId: string) {

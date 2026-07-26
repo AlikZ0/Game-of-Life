@@ -141,6 +141,31 @@ describe('Social (e2e)', () => {
     expect(rival.weeklyXp).toBeGreaterThan(0);
   });
 
+  it('auto-progresses and completes a guild mission from activity', async () => {
+    const mission = await request(http)
+      .post(`${api}/guilds/${guildId}/missions`)
+      .set(bearer(u1.token))
+      .send({ title: 'First XP', targetValue: 1 });
+    const missionId = mission.body.data.id;
+
+    const quest = await request(http)
+      .post(`${api}/quests`)
+      .set(bearer(u1.token))
+      .send({ title: 'Mission fuel', cadence: 'DAILY', difficulty: 'HARD' });
+    await request(http)
+      .post(`${api}/quests/${quest.body.data.id}/complete`)
+      .set(bearer(u1.token));
+
+    const missions = await request(http)
+      .get(`${api}/guilds/${guildId}/missions`)
+      .set(bearer(u1.token));
+    const done = missions.body.data.find(
+      (m: { id: string }) => m.id === missionId,
+    );
+    expect(done.currentValue).toBeGreaterThan(0);
+    expect(done.completedAt).not.toBeNull();
+  });
+
   it('lets a member leave the guild', async () => {
     const leave = await request(http)
       .post(`${api}/guilds/${guildId}/leave`)

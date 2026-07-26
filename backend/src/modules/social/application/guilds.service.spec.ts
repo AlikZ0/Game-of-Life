@@ -1,19 +1,25 @@
+import { PvpMetric } from '@prisma/client';
 import { GuildsService } from './guilds.service';
 
 /**
- * Verifies the real-time side of guilds: chat messages are broadcast to the
- * guild room, and crediting weekly XP pushes a refreshed leaderboard.
- * Prisma + gateway are mocked.
+ * Verifies the real-time side of guilds: chat broadcast, leaderboard push, and
+ * shared-mission auto-progress + completion rewards. Prisma / gateway /
+ * character service are mocked.
  */
 describe('GuildsService real-time', () => {
   const characterId = 'char_1';
   const guildId = 'guild_1';
 
-  function build(member: { guildId: string } | null) {
+  function build(
+    member: { guildId: string } | null,
+    missions: unknown[] = [],
+    missionUpdateCount = 1,
+  ) {
     const realtime = {
       emitGuildMessage: jest.fn(),
       emitLeaderboardUpdate: jest.fn(),
     };
+    const characters = { awardRewards: jest.fn().mockResolvedValue({}) };
     const prisma = {
       guildMember: {
         findUnique: jest.fn().mockResolvedValue(member),
@@ -27,6 +33,10 @@ describe('GuildsService real-time', () => {
         ]),
       },
       guild: { update: jest.fn().mockResolvedValue({}) },
+      guildMission: {
+        findMany: jest.fn().mockResolvedValue(missions),
+        updateMany: jest.fn().mockResolvedValue({ count: missionUpdateCount }),
+      },
       guildMessage: {
         create: jest.fn().mockResolvedValue({
           id: 'msg_1',
@@ -36,8 +46,12 @@ describe('GuildsService real-time', () => {
       },
       $transaction: jest.fn().mockResolvedValue([]),
     };
-    const service = new GuildsService(prisma as never, realtime as never);
-    return { service, realtime, prisma };
+    const service = new GuildsService(
+      prisma as never,
+      realtime as never,
+      characters as never,
+    );
+    return { service, realtime, prisma, characters };
   }
 
   it('broadcasts a posted chat message to the guild room', async () => {
@@ -68,5 +82,42 @@ describe('GuildsService real-time', () => {
     await service.recordWeeklyXp(characterId, 40);
     expect(prisma.guild.update).not.toHaveBeenCalled();
     expect(realtime.emitLeaderboardUpdate).not.toHaveBeenCalled();
+  });
+
+  it('advances an active mission without completing it', async () => {
+    const { service, prisma, characters } = build(null, [
+      { id: 'm1', currentValue: 100, targetValue: 1000, rewardGold: 500 },
+    ]);
+    await service.advanceMissions(guildId, PvpMetric.XP, 40);
+    expect(prisma.guildMission.updateMany).toHaveBeenCalledWith({
+      where: { id: 'm1', completedAt: null },
+      data: { currentValue: 140, completedAt: null },
+    });
+    expect(characters.awardRewards).not.toHaveBeenCalled();
+  });
+
+  it('completes a mission at target and rewards every member', async () => {
+    const { service, prisma, characters } = build(null, [
+      { id: 'm1', currentValue: 970, targetValue: 1000, rewardGold: 500 },
+    ]);
+    await service.advanceMissions(guildId, PvpMetric.XP, 40);
+    // completedAt stamped
+    expect(prisma.guildMission.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ currentValue: 1010 }),
+      }),
+    );
+    const call = prisma.guildMission.updateMany.mock.calls[0][0];
+    expect(call.data.completedAt).toBeInstanceOf(Date);
+    // reward granted to the (one) member returned by findMany
+    expect(characters.awardRewards).toHaveBeenCalledWith(
+      expect.objectContaining({ gold: 500, characterId }),
+    );
+  });
+
+  it('ignores non-positive mission progress', async () => {
+    const { service, prisma } = build(null, []);
+    await service.advanceMissions(guildId, PvpMetric.XP, 0);
+    expect(prisma.guildMission.findMany).not.toHaveBeenCalled();
   });
 });

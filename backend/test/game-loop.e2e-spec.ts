@@ -130,6 +130,16 @@ describe('Game loop (e2e)', () => {
     expect(dash.body.data.currentStreak).toBe(1);
   });
 
+  it('records the gold reward in the ledger', async () => {
+    const res = await request(http).get(`${api}/economy/ledger`).set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.data.meta.total).toBeGreaterThan(0);
+    const reasons = res.body.data.items.map(
+      (e: { reason: string }) => e.reason,
+    );
+    expect(reasons).toContain('QUEST_REWARD');
+  });
+
   it('defeats a boss when linked quest damage drains its HP', async () => {
     const boss = await request(http)
       .post(`${api}/bosses`)

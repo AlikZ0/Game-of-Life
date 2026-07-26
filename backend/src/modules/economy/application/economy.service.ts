@@ -3,7 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ItemType, LedgerReason } from '@prisma/client';
+import { GoldLedgerEntry, ItemType, LedgerReason } from '@prisma/client';
+import {
+  PaginatedResult,
+  PaginationQueryDto,
+  paginate,
+} from '../../../common/dto/pagination.dto';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { CreateShopRewardDto } from './dto/economy.dto';
 
@@ -117,5 +122,23 @@ export class EconomyService {
       where: { id: itemId },
       data: { equipped },
     });
+  }
+
+  // ── Gold ledger ─────────────────────────────────────────
+  /** Paginated, newest-first history of the character's gold movements. */
+  async ledger(
+    characterId: string,
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResult<GoldLedgerEntry>> {
+    const [items, total] = await Promise.all([
+      this.prisma.goldLedgerEntry.findMany({
+        where: { characterId },
+        orderBy: { createdAt: 'desc' },
+        skip: query.skip,
+        take: query.limit,
+      }),
+      this.prisma.goldLedgerEntry.count({ where: { characterId } }),
+    ]);
+    return paginate(items, total, query);
   }
 }

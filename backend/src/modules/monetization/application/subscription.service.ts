@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import {
@@ -7,6 +7,11 @@ import {
   SubscriptionTier,
 } from '@prisma/client';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
+import {
+  AppleReceiptVerifier,
+  GoogleReceiptVerifier,
+  ReceiptVerifier,
+} from '../infrastructure/receipt-verifier';
 
 export interface CheckoutResult {
   configured: boolean;
@@ -28,11 +33,50 @@ export class SubscriptionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly appleVerifier: AppleReceiptVerifier,
+    private readonly googleVerifier: GoogleReceiptVerifier,
   ) {
     const key = this.config.get<string>('billing.stripeSecretKey');
     this.stripe = key
       ? new Stripe(key, { apiVersion: '2024-04-10' as Stripe.LatestApiVersion })
       : null;
+  }
+
+  /**
+   * Redeem a mobile in-app-purchase receipt: verify it server-side with the
+   * store, then upsert the user's subscription. An active receipt grants
+   * Premium; an expired one drops the tier back to FREE.
+   */
+  async redeemReceipt(
+    userId: string,
+    provider: BillingProvider,
+    receipt: string,
+  ) {
+    const verifier = this.verifierFor(provider);
+    const verified = await verifier.verify(receipt);
+    await this.upsert(userId, {
+      provider: verified.provider,
+      externalId: verified.externalId,
+      tier: verified.isActive
+        ? SubscriptionTier.PREMIUM
+        : SubscriptionTier.FREE,
+      status: verified.isActive
+        ? SubscriptionStatus.ACTIVE
+        : SubscriptionStatus.EXPIRED,
+      currentPeriodEnd: verified.expiresAt ?? undefined,
+    });
+    return this.getStatus(userId);
+  }
+
+  private verifierFor(provider: BillingProvider): ReceiptVerifier {
+    switch (provider) {
+      case BillingProvider.APPLE_IAP:
+        return this.appleVerifier;
+      case BillingProvider.GOOGLE_PLAY:
+        return this.googleVerifier;
+      default:
+        throw new BadRequestException(`Unsupported IAP provider: ${provider}`);
+    }
   }
 
   /** Current subscription for a user (defaults to FREE / ACTIVE if none). */
@@ -280,19 +324,21 @@ export class SubscriptionService {
       externalId?: string;
       currentPeriodEnd?: Date;
       cancelAtPeriodEnd?: boolean;
+      provider?: BillingProvider;
     },
   ) {
+    const { provider = BillingProvider.STRIPE, ...rest } = data;
     return this.prisma.subscription.upsert({
       where: { userId },
-      update: { ...data, provider: BillingProvider.STRIPE },
+      update: { ...rest, provider },
       create: {
         userId,
-        provider: BillingProvider.STRIPE,
-        tier: data.tier ?? SubscriptionTier.PREMIUM,
-        status: data.status ?? SubscriptionStatus.ACTIVE,
-        externalId: data.externalId,
-        currentPeriodEnd: data.currentPeriodEnd,
-        cancelAtPeriodEnd: data.cancelAtPeriodEnd ?? false,
+        provider,
+        tier: rest.tier ?? SubscriptionTier.PREMIUM,
+        status: rest.status ?? SubscriptionStatus.ACTIVE,
+        externalId: rest.externalId,
+        currentPeriodEnd: rest.currentPeriodEnd,
+        cancelAtPeriodEnd: rest.cancelAtPeriodEnd ?? false,
       },
     });
   }

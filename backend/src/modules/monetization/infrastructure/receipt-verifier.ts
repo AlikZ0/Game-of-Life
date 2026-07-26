@@ -1,4 +1,11 @@
-import { Injectable, NotImplementedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { GoogleAuth } from 'google-auth-library';
 import { BillingProvider } from '@prisma/client';
 
 export interface VerifiedReceipt {
@@ -21,36 +28,188 @@ export interface ReceiptVerifier {
   verify(receipt: string): Promise<VerifiedReceipt>;
 }
 
+const APPLE_PROD_URL = 'https://buy.itunes.apple.com/verifyReceipt';
+const APPLE_SANDBOX_URL = 'https://sandbox.itunes.apple.com/verifyReceipt';
+// Apple returns 21007 when a production receipt is actually from the sandbox —
+// the documented signal to retry the same receipt against the sandbox host.
+const APPLE_SANDBOX_STATUS = 21007;
+
+interface AppleTransaction {
+  original_transaction_id?: string;
+  transaction_id?: string;
+  expires_date_ms?: string;
+}
+interface AppleResponse {
+  status: number;
+  latest_receipt_info?: AppleTransaction[];
+}
+
 /**
- * Apple App Store receipt verification.
- * TODO: POST the receipt to https://buy.itunes.apple.com/verifyReceipt (with a
- * sandbox fallback on status 21007), validate the bundle id and the latest
- * `expires_date_ms`, and map it to a VerifiedReceipt.
+ * Apple App Store receipt verification via /verifyReceipt. Optional: without an
+ * `APPLE_SHARED_SECRET` the endpoint is unavailable rather than failing the
+ * whole app at boot. Handles the sandbox-fallback handshake and picks the
+ * latest transaction by expiry.
  */
 @Injectable()
 export class AppleReceiptVerifier implements ReceiptVerifier {
   readonly provider = BillingProvider.APPLE_IAP;
+  private readonly logger = new Logger(AppleReceiptVerifier.name);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async verify(_receipt: string): Promise<VerifiedReceipt> {
-    throw new NotImplementedException('Apple IAP verification not configured');
+  constructor(private readonly config: ConfigService) {}
+
+  async verify(receipt: string): Promise<VerifiedReceipt> {
+    const sharedSecret = this.config.get<string>('billing.appleSharedSecret');
+    if (!sharedSecret) {
+      throw new ServiceUnavailableException(
+        'Apple IAP verification is not configured',
+      );
+    }
+
+    let res = await this.post(APPLE_PROD_URL, receipt, sharedSecret);
+    if (res.status === APPLE_SANDBOX_STATUS) {
+      res = await this.post(APPLE_SANDBOX_URL, receipt, sharedSecret);
+    }
+    if (res.status !== 0) {
+      this.logger.warn(`Apple receipt rejected with status ${res.status}`);
+      throw new UnauthorizedException('Invalid App Store receipt');
+    }
+
+    const latest = this.latestTransaction(res.latest_receipt_info ?? []);
+    if (!latest?.expires_date_ms) {
+      throw new UnauthorizedException('App Store receipt has no subscription');
+    }
+    const expiresAt = new Date(Number(latest.expires_date_ms));
+    return {
+      provider: this.provider,
+      externalId:
+        latest.original_transaction_id ?? latest.transaction_id ?? 'unknown',
+      isActive: expiresAt.getTime() > Date.now(),
+      expiresAt,
+    };
+  }
+
+  private async post(
+    url: string,
+    receipt: string,
+    password: string,
+  ): Promise<AppleResponse> {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        'receipt-data': receipt,
+        password,
+        'exclude-old-transactions': true,
+      }),
+    });
+    if (!res.ok) throw new ServiceUnavailableException('App Store unreachable');
+    return (await res.json()) as AppleResponse;
+  }
+
+  private latestTransaction(txns: AppleTransaction[]): AppleTransaction | null {
+    return txns.reduce<AppleTransaction | null>((latest, t) => {
+      if (!t.expires_date_ms) return latest;
+      if (!latest?.expires_date_ms) return t;
+      return Number(t.expires_date_ms) > Number(latest.expires_date_ms)
+        ? t
+        : latest;
+    }, null);
   }
 }
 
+interface GooglePurchase {
+  expiryTimeMillis?: string;
+  orderId?: string;
+  paymentState?: number;
+}
+
 /**
- * Google Play Billing receipt verification.
- * TODO: call the Android Publisher API
- * (purchases.subscriptions.get / subscriptionsv2) with a service account, check
- * `expiryTimeMillis` and acknowledgement state, and map it to a VerifiedReceipt.
+ * Google Play Billing verification via the Android Publisher API. Optional:
+ * requires a package name + service-account credentials, otherwise the endpoint
+ * is unavailable. The client sends a JSON payload `{ productId, purchaseToken }`.
  */
 @Injectable()
 export class GoogleReceiptVerifier implements ReceiptVerifier {
   readonly provider = BillingProvider.GOOGLE_PLAY;
+  private readonly logger = new Logger(GoogleReceiptVerifier.name);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async verify(_receipt: string): Promise<VerifiedReceipt> {
-    throw new NotImplementedException(
-      'Google Play verification not configured',
+  constructor(private readonly config: ConfigService) {}
+
+  async verify(receipt: string): Promise<VerifiedReceipt> {
+    const packageName = this.config.get<string>('billing.googlePackageName');
+    if (!packageName || !this.hasCredentials()) {
+      throw new ServiceUnavailableException(
+        'Google Play verification is not configured',
+      );
+    }
+
+    let productId: string;
+    let purchaseToken: string;
+    try {
+      ({ productId, purchaseToken } = JSON.parse(receipt));
+    } catch {
+      throw new UnauthorizedException('Malformed Google Play receipt');
+    }
+    if (!productId || !purchaseToken) {
+      throw new UnauthorizedException('Incomplete Google Play receipt');
+    }
+
+    const token = await this.fetchAccessToken();
+    const url =
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
+      `${encodeURIComponent(packageName)}/purchases/subscriptions/` +
+      `${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}`;
+
+    const res = await fetch(url, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401 || res.status === 404) {
+      this.logger.warn(`Google receipt rejected with status ${res.status}`);
+      throw new UnauthorizedException('Invalid Google Play receipt');
+    }
+    if (!res.ok) {
+      throw new ServiceUnavailableException('Google Play unreachable');
+    }
+
+    const purchase = (await res.json()) as GooglePurchase;
+    const expiresAt = purchase.expiryTimeMillis
+      ? new Date(Number(purchase.expiryTimeMillis))
+      : null;
+    return {
+      provider: this.provider,
+      externalId: purchase.orderId ?? purchaseToken,
+      isActive: !!expiresAt && expiresAt.getTime() > Date.now(),
+      expiresAt,
+    };
+  }
+
+  private hasCredentials(): boolean {
+    return (
+      !!this.config.get<string>('billing.googleServiceAccountEmail') &&
+      !!this.config.get<string>('billing.googleServiceAccountKey')
     );
+  }
+
+  /**
+   * Obtain an OAuth access token for the Android Publisher API from the
+   * configured service account. Extracted so it can be stubbed in tests.
+   */
+  protected async fetchAccessToken(): Promise<string> {
+    const auth = new GoogleAuth({
+      credentials: {
+        client_email: this.config.get<string>(
+          'billing.googleServiceAccountEmail',
+        ),
+        private_key: this.config
+          .get<string>('billing.googleServiceAccountKey')
+          ?.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/androidpublisher'],
+    });
+    const token = await auth.getAccessToken();
+    if (!token) {
+      throw new ServiceUnavailableException('Could not authenticate to Google');
+    }
+    return token;
   }
 }

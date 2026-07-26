@@ -1,0 +1,83 @@
+{
+  "@@locale": "ru",
+
+  "appName": "Life Quest",
+
+  "welcomeBack": "С возвращением, герой",
+  "questsWaitingSubtitle": "Твои задания ждут. Войди, чтобы не прервать серию.",
+
+  "email": "Эл. почта",
+  "password": "Пароль",
+  "confirmPassword": "Подтвердите пароль",
+  "forgotPassword": "Забыли пароль?",
+  "signIn": "Войти",
+  "signInWithGoogle": "Продолжить с Google",
+  "signInWithApple": "Продолжить с Apple",
+  "orDivider": "или",
+  "newToLifeQuest": "Впервые в Life Quest?",
+  "createHero": "Создать героя",
+
+  "emailRequired": "Укажите эл. почту",
+  "emailInvalid": "Введите корректную эл. почту",
+  "passwordTooShort": "Минимум 8 символов",
+  "passwordsDoNotMatch": "Пароли не совпадают",
+
+  "createYourHero": "Создай своего героя",
+  "startYourJourney": "Начни своё приключение",
+  "registerSubtitle": "Один аккаунт — бесконечные задания. Опыт уже ждёт.",
+  "agreeToTerms": "Я принимаю Условия и Политику конфиденциальности",
+  "createAccount": "Создать аккаунт",
+  "acceptTermsPrompt": "Примите условия, чтобы продолжить.",
+
+  "heroPreviewName": "Твой герой",
+  "heroName": "Назови своего героя",
+  "heroNameHint": "напр. Ария Штормклинок",
+  "chooseAvatar": "Выбери аватар",
+  "chooseClass": "Выбери класс",
+  "beginJourney": "Войти в мир",
+
+  "newQuest": "Новое задание",
+  "greetingMorning": "Доброе утро",
+  "greetingAfternoon": "Добрый день",
+  "greetingEvening": "Добрый вечер",
+  "todaysQuests": "Твои задания",
+  "cadenceAll": "Все",
+  "emptyQuests": "Пока нет заданий",
+  "emptyQuestsSubtitle": "Нажми «Новое задание», чтобы превратить привычку в приключение.",
+  "completedToday": "Выполнено сегодня ({count})",
+
+  "quickShop": "Магазин",
+  "quickAiCoach": "ИИ-коуч",
+  "quickPass": "Пропуск",
+
+  "navQuests": "Задания",
+  "navSkills": "Навыки",
+  "navBosses": "Боссы",
+  "navSocial": "Общение",
+  "navProfile": "Профиль",
+
+  "settingsTitle": "Настройки",
+  "sectionAppearance": "Оформление",
+  "theme": "Тема",
+  "themeSystem": "Системная",
+  "themeDark": "Тёмная",
+  "themeLight": "Светлая",
+  "sectionNotifications": "Уведомления",
+  "questReminders": "Напоминания о заданиях",
+  "questRemindersSubtitle": "Подсказки, когда серия под угрозой",
+  "sectionAccount": "Аккаунт",
+  "privacyPolicy": "Политика конфиденциальности",
+  "sectionAbout": "О приложении",
+  "version": "Версия",
+  "logout": "Выйти",
+  "language": "Язык",
+  "languageSystem": "Системный",
+
+  "cancel": "Отмена",
+  "save": "Сохранить",
+  "retry": "Повторить",
+  "loadingError": "Что-то пошло не так",
+
+  "level": "Уровень {level}",
+  "streakDays": "{count, plural, =0{Пока нет серии} one{Серия {count} день} few{Серия {count} дня} many{Серия {count} дней} other{Серия {count} дней}}"
+}

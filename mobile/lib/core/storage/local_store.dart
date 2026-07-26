@@ -14,6 +14,7 @@ class LocalStore {
 
   static const String kOnboardingSeen = 'onboarding_seen';
   static const String kThemeMode = 'theme_mode'; // system | dark | light
+  static const String kLocale = 'locale'; // null → follow system; else language code
   static const String kCachedCharacter = 'cached_character';
 
   /// Initialize Hive and open the app's boxes. Call once in bootstrap.
@@ -30,6 +31,12 @@ class LocalStore {
 
   String get themeMode => _prefs.get(kThemeMode, defaultValue: 'system') as String;
   Future<void> setThemeMode(String value) => _prefs.put(kThemeMode, value);
+
+  /// Preferred locale language code (e.g. `en`, `ru`). `null` means follow the
+  /// device locale.
+  String? get localeCode => _prefs.get(kLocale) as String?;
+  Future<void> setLocale(String? code) =>
+      code == null ? _prefs.delete(kLocale) : _prefs.put(kLocale, code);
 
   // - Cache -
   Map<String, dynamic>? get cachedCharacter {

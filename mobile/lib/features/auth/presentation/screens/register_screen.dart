@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:life_quest/l10n/app_localizations.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -34,7 +36,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (!_acceptedTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the terms to continue.')),
+        SnackBar(content: Text(AppLocalizations.of(context).acceptTermsPrompt)),
       );
       return;
     }
@@ -45,6 +47,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(authControllerProvider);
 
     ref.listen<AuthState>(authControllerProvider, (prev, next) {
@@ -56,7 +59,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create your hero')),
+      appBar: AppBar(title: Text(l10n.createYourHero)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
@@ -66,24 +69,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppSpacing.vLg,
-                Text('Start your journey', style: text.headlineLarge),
+                Text(l10n.startYourJourney, style: text.headlineLarge),
                 AppSpacing.gapXs,
                 Text(
-                  'One account, infinite quests. XP is waiting.',
+                  l10n.registerSubtitle,
                   style: text.bodyMedium?.copyWith(color: AppColors.textSecondaryDark),
                 ),
                 const SizedBox(height: AppSpacing.xxxl),
                 TextFormField(
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.mail_outline_rounded),
+                  decoration: InputDecoration(
+                    labelText: l10n.email,
+                    prefixIcon: const Icon(Icons.mail_outline_rounded),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Email is required';
+                    if (v == null || v.isEmpty) return l10n.emailRequired;
                     final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim());
-                    return ok ? null : 'Enter a valid email';
+                    return ok ? null : l10n.emailInvalid;
                   },
                 ),
                 AppSpacing.vLg,
@@ -91,7 +94,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _password,
                   obscureText: _obscure,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: l10n.password,
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(_obscure
@@ -101,18 +104,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   validator: (v) =>
-                      (v == null || v.length < 8) ? 'Min. 8 characters' : null,
+                      (v == null || v.length < 8) ? l10n.passwordTooShort : null,
                 ),
                 AppSpacing.vLg,
                 TextFormField(
                   controller: _confirm,
                   obscureText: _obscure,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirm password',
-                    prefixIcon: Icon(Icons.lock_person_outlined),
+                  decoration: InputDecoration(
+                    labelText: l10n.confirmPassword,
+                    prefixIcon: const Icon(Icons.lock_person_outlined),
                   ),
                   validator: (v) =>
-                      v != _password.text ? 'Passwords do not match' : null,
+                      v != _password.text ? l10n.passwordsDoNotMatch : null,
                 ),
                 AppSpacing.vMd,
                 CheckboxListTile(
@@ -120,11 +123,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
-                  title: Text('I agree to the Terms & Privacy Policy', style: text.bodySmall),
+                  title: Text(l10n.agreeToTerms, style: text.bodySmall),
                 ),
                 AppSpacing.vLg,
                 PrimaryButton(
-                  label: 'Create account',
+                  label: l10n.createAccount,
                   icon: Icons.auto_awesome_rounded,
                   isLoading: state.isSubmitting,
                   onPressed: _submit,

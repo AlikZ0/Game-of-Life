@@ -1,0 +1,83 @@
+{
+  "@@locale": "uk",
+
+  "appName": "Life Quest",
+
+  "welcomeBack": "З поверненням, герою",
+  "questsWaitingSubtitle": "Твої завдання чекають. Увійди, щоб не перервати серію.",
+
+  "email": "Ел. пошта",
+  "password": "Пароль",
+  "confirmPassword": "Підтвердіть пароль",
+  "forgotPassword": "Забули пароль?",
+  "signIn": "Увійти",
+  "signInWithGoogle": "Продовжити з Google",
+  "signInWithApple": "Продовжити з Apple",
+  "orDivider": "або",
+  "newToLifeQuest": "Уперше в Life Quest?",
+  "createHero": "Створити героя",
+
+  "emailRequired": "Вкажіть ел. пошту",
+  "emailInvalid": "Введіть коректну ел. пошту",
+  "passwordTooShort": "Мінімум 8 символів",
+  "passwordsDoNotMatch": "Паролі не збігаються",
+
+  "createYourHero": "Створи свого героя",
+  "startYourJourney": "Розпочни свою пригоду",
+  "registerSubtitle": "Один акаунт — безмежні завдання. Досвід уже чекає.",
+  "agreeToTerms": "Я приймаю Умови та Політику конфіденційності",
+  "createAccount": "Створити акаунт",
+  "acceptTermsPrompt": "Прийміть умови, щоб продовжити.",
+
+  "heroPreviewName": "Твій герой",
+  "heroName": "Назви свого героя",
+  "heroNameHint": "напр. Арія Штормклинок",
+  "chooseAvatar": "Обери аватар",
+  "chooseClass": "Обери клас",
+  "beginJourney": "Увійти у світ",
+
+  "newQuest": "Нове завдання",
+  "greetingMorning": "Доброго ранку",
+  "greetingAfternoon": "Доброго дня",
+  "greetingEvening": "Доброго вечора",
+  "todaysQuests": "Твої завдання",
+  "cadenceAll": "Усі",
+  "emptyQuests": "Ще немає завдань",
+  "emptyQuestsSubtitle": "Натисни «Нове завдання», щоб перетворити звичку на пригоду.",
+  "completedToday": "Виконано сьогодні ({count})",
+
+  "quickShop": "Магазин",
+  "quickAiCoach": "ШІ-коуч",
+  "quickPass": "Перепустка",
+
+  "navQuests": "Завдання",
+  "navSkills": "Навички",
+  "navBosses": "Боси",
+  "navSocial": "Спільнота",
+  "navProfile": "Профіль",
+
+  "settingsTitle": "Налаштування",
+  "sectionAppearance": "Оформлення",
+  "theme": "Тема",
+  "themeSystem": "Системна",
+  "themeDark": "Темна",
+  "themeLight": "Світла",
+  "sectionNotifications": "Сповіщення",
+  "questReminders": "Нагадування про завдання",
+  "questRemindersSubtitle": "Підказки, коли серія під загрозою",
+  "sectionAccount": "Акаунт",
+  "privacyPolicy": "Політика конфіденційності",
+  "sectionAbout": "Про застосунок",
+  "version": "Версія",
+  "logout": "Вийти",
+  "language": "Мова",
+  "languageSystem": "Системна",
+
+  "cancel": "Скасувати",
+  "save": "Зберегти",
+  "retry": "Повторити",
+  "loadingError": "Щось пішло не так",
+
+  "level": "Рівень {level}",
+  "streakDays": "{count, plural, =0{Ще немає серії} one{Серія {count} день} few{Серія {count} дні} many{Серія {count} днів} other{Серія {count} днів}}"
+}

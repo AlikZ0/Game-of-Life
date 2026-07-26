@@ -1,0 +1,302 @@
+{
+  "@@locale": "en",
+
+  "appName": "Life Quest",
+  "@appName": {
+    "description": "The application name / brand mark."
+  },
+
+  "welcomeBack": "Welcome back, hero",
+  "@welcomeBack": {
+    "description": "Login screen headline."
+  },
+  "questsWaitingSubtitle": "Your quests are waiting. Sign in to keep the streak alive.",
+  "@questsWaitingSubtitle": {
+    "description": "Login screen sub-headline under the welcome message."
+  },
+
+  "email": "Email",
+  "@email": {
+    "description": "Email field label."
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Password field label."
+  },
+  "confirmPassword": "Confirm password",
+  "@confirmPassword": {
+    "description": "Confirm-password field label on the register screen."
+  },
+  "forgotPassword": "Forgot password?",
+  "@forgotPassword": {
+    "description": "Link to the password reset flow."
+  },
+  "signIn": "Sign in",
+  "@signIn": {
+    "description": "Primary sign-in button."
+  },
+  "signInWithGoogle": "Continue with Google",
+  "@signInWithGoogle": {
+    "description": "Google social auth button."
+  },
+  "signInWithApple": "Continue with Apple",
+  "@signInWithApple": {
+    "description": "Apple social auth button."
+  },
+  "orDivider": "or",
+  "@orDivider": {
+    "description": "Divider label between email and social sign-in."
+  },
+  "newToLifeQuest": "New to Life Quest?",
+  "@newToLifeQuest": {
+    "description": "Prompt before the register link on the login screen."
+  },
+  "createHero": "Create a hero",
+  "@createHero": {
+    "description": "Register link label on the login screen."
+  },
+
+  "emailRequired": "Email is required",
+  "@emailRequired": {
+    "description": "Validation error when the email field is empty."
+  },
+  "emailInvalid": "Enter a valid email",
+  "@emailInvalid": {
+    "description": "Validation error when the email is malformed."
+  },
+  "passwordTooShort": "Min. 8 characters",
+  "@passwordTooShort": {
+    "description": "Validation error when the password is shorter than 8 characters."
+  },
+  "passwordsDoNotMatch": "Passwords do not match",
+  "@passwordsDoNotMatch": {
+    "description": "Validation error when password confirmation does not match."
+  },
+
+  "createYourHero": "Create your hero",
+  "@createYourHero": {
+    "description": "Register screen app bar title."
+  },
+  "startYourJourney": "Start your journey",
+  "@startYourJourney": {
+    "description": "Register screen headline."
+  },
+  "registerSubtitle": "One account, infinite quests. XP is waiting.",
+  "@registerSubtitle": {
+    "description": "Register screen sub-headline."
+  },
+  "agreeToTerms": "I agree to the Terms & Privacy Policy",
+  "@agreeToTerms": {
+    "description": "Terms acceptance checkbox label."
+  },
+  "createAccount": "Create account",
+  "@createAccount": {
+    "description": "Register submit button."
+  },
+  "acceptTermsPrompt": "Please accept the terms to continue.",
+  "@acceptTermsPrompt": {
+    "description": "Snackbar shown when the user submits without accepting the terms."
+  },
+
+  "heroPreviewName": "Your hero",
+  "@heroPreviewName": {
+    "description": "Placeholder hero name in the character-creation live preview."
+  },
+  "heroName": "Name your hero",
+  "@heroName": {
+    "description": "Character-creation name section title."
+  },
+  "heroNameHint": "e.g. Aria Stormblade",
+  "@heroNameHint": {
+    "description": "Hint text for the hero name field."
+  },
+  "chooseAvatar": "Choose an avatar",
+  "@chooseAvatar": {
+    "description": "Character-creation avatar section title."
+  },
+  "chooseClass": "Pick your class",
+  "@chooseClass": {
+    "description": "Character-creation class section title."
+  },
+  "beginJourney": "Enter the realm",
+  "@beginJourney": {
+    "description": "Character-creation submit button."
+  },
+
+  "newQuest": "New quest",
+  "@newQuest": {
+    "description": "Floating action button to create a quest."
+  },
+  "greetingMorning": "Good morning",
+  "@greetingMorning": {
+    "description": "Dashboard greeting before noon."
+  },
+  "greetingAfternoon": "Good afternoon",
+  "@greetingAfternoon": {
+    "description": "Dashboard greeting between noon and 6pm."
+  },
+  "greetingEvening": "Good evening",
+  "@greetingEvening": {
+    "description": "Dashboard greeting after 6pm."
+  },
+  "todaysQuests": "Your quests",
+  "@todaysQuests": {
+    "description": "Dashboard app bar title."
+  },
+  "cadenceAll": "All",
+  "@cadenceAll": {
+    "description": "Quest cadence filter chip that shows all quests."
+  },
+  "emptyQuests": "No quests yet",
+  "@emptyQuests": {
+    "description": "Empty-state title when the quest list is empty."
+  },
+  "emptyQuestsSubtitle": "Tap “New quest” to turn a habit into an adventure.",
+  "@emptyQuestsSubtitle": {
+    "description": "Empty-state subtitle when the quest list is empty."
+  },
+  "completedToday": "Completed today ({count})",
+  "@completedToday": {
+    "description": "Header above the quests completed in the current period.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "quickShop": "Shop",
+  "@quickShop": {
+    "description": "Dashboard quick action: open the shop."
+  },
+  "quickAiCoach": "AI Coach",
+  "@quickAiCoach": {
+    "description": "Dashboard quick action: open the AI coach."
+  },
+  "quickPass": "Pass",
+  "@quickPass": {
+    "description": "Dashboard quick action: open the battle pass."
+  },
+
+  "navQuests": "Quests",
+  "@navQuests": {
+    "description": "Bottom navigation label for the quests tab."
+  },
+  "navSkills": "Skills",
+  "@navSkills": {
+    "description": "Bottom navigation label for the skills tab."
+  },
+  "navBosses": "Bosses",
+  "@navBosses": {
+    "description": "Bottom navigation label for the bosses tab."
+  },
+  "navSocial": "Social",
+  "@navSocial": {
+    "description": "Bottom navigation label for the social tab."
+  },
+  "navProfile": "Profile",
+  "@navProfile": {
+    "description": "Bottom navigation label for the profile tab."
+  },
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Settings screen app bar title."
+  },
+  "sectionAppearance": "Appearance",
+  "@sectionAppearance": {
+    "description": "Settings section header for appearance options."
+  },
+  "theme": "Theme",
+  "@theme": {
+    "description": "Theme setting label."
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "Theme option: follow the system theme."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Theme option: always dark."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Theme option: always light."
+  },
+  "sectionNotifications": "Notifications",
+  "@sectionNotifications": {
+    "description": "Settings section header for notifications."
+  },
+  "questReminders": "Quest reminders",
+  "@questReminders": {
+    "description": "Notification toggle label."
+  },
+  "questRemindersSubtitle": "Nudges when a streak is at risk",
+  "@questRemindersSubtitle": {
+    "description": "Notification toggle subtitle."
+  },
+  "sectionAccount": "Account",
+  "@sectionAccount": {
+    "description": "Settings section header for account info."
+  },
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {
+    "description": "Link to the privacy policy."
+  },
+  "sectionAbout": "About",
+  "@sectionAbout": {
+    "description": "Settings section header for about info."
+  },
+  "version": "Version",
+  "@version": {
+    "description": "App version list tile label."
+  },
+  "logout": "Sign out",
+  "@logout": {
+    "description": "Sign-out action label."
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language setting label."
+  },
+  "languageSystem": "System",
+  "@languageSystem": {
+    "description": "Language option: follow the system language."
+  },
+
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Generic cancel button."
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Generic save button."
+  },
+  "retry": "Try again",
+  "@retry": {
+    "description": "Retry button on error states."
+  },
+  "loadingError": "Something went wrong",
+  "@loadingError": {
+    "description": "Generic error headline shown on failed loads."
+  },
+
+  "level": "Level {level}",
+  "@level": {
+    "description": "A character level, e.g. \"Level 12\".",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "streakDays": "{count, plural, =0{No streak yet} one{{count}-day streak} other{{count}-day streak}}",
+  "@streakDays": {
+    "description": "Current streak length in days, with plural handling.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

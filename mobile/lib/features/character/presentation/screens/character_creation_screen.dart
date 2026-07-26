@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:life_quest/l10n/app_localizations.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -42,6 +44,7 @@ class _CharacterCreationScreenState extends ConsumerState<CharacterCreationScree
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(characterCreationControllerProvider);
     final controller = ref.read(characterCreationControllerProvider.notifier);
     final selectedClass = state.selectedClass;
@@ -93,7 +96,7 @@ class _CharacterCreationScreenState extends ConsumerState<CharacterCreationScree
                           ),
                           AppSpacing.vMd,
                           Text(
-                            state.name.trim().isEmpty ? 'Your hero' : state.name.trim(),
+                            state.name.trim().isEmpty ? l10n.heroPreviewName : state.name.trim(),
                             style: text.headlineLarge?.copyWith(color: Colors.white),
                           ),
                           Text(
@@ -110,16 +113,16 @@ class _CharacterCreationScreenState extends ConsumerState<CharacterCreationScree
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Name your hero', style: text.titleMedium),
+                          Text(l10n.heroName, style: text.titleMedium),
                           AppSpacing.vSm,
                           TextField(
                             controller: _nameController,
                             maxLength: 20,
                             textCapitalization: TextCapitalization.words,
                             onChanged: controller.setName,
-                            decoration: const InputDecoration(
-                              hintText: 'e.g. Aria Stormblade',
-                              prefixIcon: Icon(Icons.badge_outlined),
+                            decoration: InputDecoration(
+                              hintText: l10n.heroNameHint,
+                              prefixIcon: const Icon(Icons.badge_outlined),
                             ),
                           ),
                         ],
@@ -129,7 +132,7 @@ class _CharacterCreationScreenState extends ConsumerState<CharacterCreationScree
                     // ── Avatar ───────────────────────────────────────────────
                     Padding(
                       padding: const EdgeInsets.fromLTRB(AppSpacing.xxl, AppSpacing.sm, AppSpacing.xxl, AppSpacing.md),
-                      child: Text('Choose an avatar', style: text.titleMedium),
+                      child: Text(l10n.chooseAvatar, style: text.titleMedium),
                     ),
                     SizedBox(
                       height: 76,
@@ -167,7 +170,7 @@ class _CharacterCreationScreenState extends ConsumerState<CharacterCreationScree
                     // ── Class ────────────────────────────────────────────────
                     Padding(
                       padding: const EdgeInsets.fromLTRB(AppSpacing.xxl, AppSpacing.xl, AppSpacing.xxl, AppSpacing.md),
-                      child: Text('Pick your class', style: text.titleMedium),
+                      child: Text(l10n.chooseClass, style: text.titleMedium),
                     ),
                     ClassPicker(
                       selected: selectedClass,
@@ -181,7 +184,7 @@ class _CharacterCreationScreenState extends ConsumerState<CharacterCreationScree
             Padding(
               padding: const EdgeInsets.all(AppSpacing.xxl),
               child: PrimaryButton(
-                label: 'Enter the realm',
+                label: l10n.beginJourney,
                 icon: Icons.auto_awesome_rounded,
                 isLoading: state.isSubmitting,
                 onPressed: state.canSubmit ? _submit : null,

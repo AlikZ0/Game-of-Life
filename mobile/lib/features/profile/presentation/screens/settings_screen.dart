@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_quest/l10n/app_localizations.dart';
 
 import '../../../../core/config/di.dart';
+import '../../../../core/l10n/locale_controller.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 
@@ -20,26 +22,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final store = ref.watch(localStoreProvider);
+    final localeCode = ref.watch(localeProvider)?.languageCode; // null → system
     final email = ref.watch(authControllerProvider).user?.email ?? '—';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         children: [
-          const _SectionHeader('Appearance'),
+          _SectionHeader(l10n.sectionAppearance),
           ListTile(
             leading: const Icon(Icons.dark_mode_rounded),
-            title: const Text('Theme'),
-            subtitle: Text(_themeLabel(store.themeMode)),
+            title: Text(l10n.theme),
+            subtitle: Text(_themeLabel(l10n, store.themeMode)),
             trailing: DropdownButton<String>(
               value: store.themeMode,
               underline: const SizedBox.shrink(),
-              items: const [
-                DropdownMenuItem(value: 'system', child: Text('System')),
-                DropdownMenuItem(value: 'dark', child: Text('Dark')),
-                DropdownMenuItem(value: 'light', child: Text('Light')),
+              items: [
+                DropdownMenuItem(value: 'system', child: Text(l10n.themeSystem)),
+                DropdownMenuItem(value: 'dark', child: Text(l10n.themeDark)),
+                DropdownMenuItem(value: 'light', child: Text(l10n.themeLight)),
               ],
               onChanged: (value) async {
                 if (value == null) return;
@@ -48,35 +52,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
           ),
-          const _SectionHeader('Notifications'),
+          ListTile(
+            leading: const Icon(Icons.language_rounded),
+            title: Text(l10n.language),
+            trailing: DropdownButton<String?>(
+              value: localeCode,
+              underline: const SizedBox.shrink(),
+              items: [
+                DropdownMenuItem(value: null, child: Text(l10n.languageSystem)),
+                const DropdownMenuItem(value: 'en', child: Text('English')),
+                const DropdownMenuItem(value: 'ru', child: Text('Русский')),
+                const DropdownMenuItem(value: 'uk', child: Text('Українська')),
+                const DropdownMenuItem(value: 'pt', child: Text('Português')),
+              ],
+              onChanged: (value) =>
+                  ref.read(localeProvider.notifier).setLocale(value),
+            ),
+          ),
+          _SectionHeader(l10n.sectionNotifications),
           SwitchListTile(
             secondary: const Icon(Icons.notifications_rounded),
-            title: const Text('Quest reminders'),
-            subtitle: const Text('Nudges when a streak is at risk'),
+            title: Text(l10n.questReminders),
+            subtitle: Text(l10n.questRemindersSubtitle),
             value: _notifications,
             onChanged: (v) => setState(() => _notifications = v),
           ),
-          const _SectionHeader('Account'),
+          _SectionHeader(l10n.sectionAccount),
           ListTile(
             leading: const Icon(Icons.mail_outline_rounded),
-            title: const Text('Email'),
+            title: Text(l10n.email),
             subtitle: Text(email),
           ),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacy Policy'),
+            title: Text(l10n.privacyPolicy),
             trailing: const Icon(Icons.open_in_new_rounded, size: 18),
             onTap: () {},
           ),
-          const _SectionHeader('About'),
-          const ListTile(
-            leading: Icon(Icons.info_outline_rounded),
-            title: Text('Version'),
-            subtitle: Text('1.0.0 (1)'),
+          _SectionHeader(l10n.sectionAbout),
+          ListTile(
+            leading: const Icon(Icons.info_outline_rounded),
+            title: Text(l10n.version),
+            subtitle: const Text('1.0.0 (1)'),
           ),
           ListTile(
             leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-            title: const Text('Sign out'),
+            title: Text(l10n.logout),
             onTap: () => ref.read(authControllerProvider.notifier).logout(),
           ),
         ],
@@ -84,10 +105,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  String _themeLabel(String mode) => switch (mode) {
-        'dark' => 'Dark',
-        'light' => 'Light',
-        _ => 'System',
+  String _themeLabel(AppLocalizations l10n, String mode) => switch (mode) {
+        'dark' => l10n.themeDark,
+        'light' => l10n.themeLight,
+        _ => l10n.themeSystem,
       };
 }
 

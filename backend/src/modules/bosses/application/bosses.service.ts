@@ -3,7 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Boss, LedgerReason } from '@prisma/client';
+import { Boss, Difficulty, LedgerReason } from '@prisma/client';
+import { periodKeyFor } from '../../../common/utils/period';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { CharacterService } from '../../character/application/character.service';
 import { BossResponseDto, CreateBossDto } from './dto/boss.dto';
@@ -13,6 +14,14 @@ export interface DamageResult {
   defeated: boolean;
   rewardXp?: number;
   rewardGold?: number;
+}
+
+export interface LinkedQuestDto {
+  id: string;
+  title: string;
+  difficulty: Difficulty;
+  damage: number;
+  completedThisPeriod: boolean;
 }
 
 @Injectable()
@@ -58,6 +67,47 @@ export class BossesService {
     if (!boss) throw new NotFoundException('Boss not found');
     if (boss.characterId !== characterId) throw new ForbiddenException();
     return this.toDto(boss, boss._count.quests);
+  }
+
+  /**
+   * The ACTIVE quests wired to a boss — the "attacking quests" the mobile boss
+   * detail screen lists, each with the damage it deals and whether it's already
+   * been completed this period.
+   */
+  async linkedQuests(
+    characterId: string,
+    bossId: string,
+  ): Promise<LinkedQuestDto[]> {
+    const boss = await this.prisma.boss.findUnique({
+      where: { id: bossId },
+      select: { characterId: true },
+    });
+    if (!boss) throw new NotFoundException('Boss not found');
+    if (boss.characterId !== characterId) throw new ForbiddenException();
+
+    const quests = await this.prisma.quest.findMany({
+      where: { bossId, characterId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return Promise.all(
+      quests.map(async (q) => ({
+        id: q.id,
+        title: q.title,
+        difficulty: q.difficulty,
+        damage: q.damage,
+        completedThisPeriod: Boolean(
+          await this.prisma.questCompletion.findUnique({
+            where: {
+              questId_periodKey: {
+                questId: q.id,
+                periodKey: periodKeyFor(q.cadence),
+              },
+            },
+          }),
+        ),
+      })),
+    );
   }
 
   /**

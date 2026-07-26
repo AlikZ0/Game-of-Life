@@ -156,6 +156,19 @@ describe('Game loop (e2e)', () => {
     });
     bossQuestId = quest.body.data.id;
 
+    const before = await request(http)
+      .get(`${api}/bosses/${bossId}/quests`)
+      .set(auth());
+    expect(before.status).toBe(200);
+    const linked = before.body.data.find(
+      (q: { id: string }) => q.id === bossQuestId,
+    );
+    expect(linked).toMatchObject({
+      title: 'Final push',
+      completedThisPeriod: false,
+    });
+    expect(linked.damage).toBeGreaterThan(0);
+
     const res = await request(http)
       .post(`${api}/quests/${bossQuestId}/complete`)
       .set(auth());
@@ -163,6 +176,14 @@ describe('Game loop (e2e)', () => {
     expect(res.status).toBe(201);
     expect(res.body.data.bossDamage).toBeGreaterThan(0);
     expect(res.body.data.bossDefeated).toBe(true);
+
+    const after = await request(http)
+      .get(`${api}/bosses/${bossId}/quests`)
+      .set(auth());
+    const linkedAfter = after.body.data.find(
+      (q: { id: string }) => q.id === bossQuestId,
+    );
+    expect(linkedAfter?.completedThisPeriod).toBe(true);
 
     const view = await request(http).get(`${api}/bosses/${bossId}`).set(auth());
     expect(view.body.data.status).toBe('DEFEATED');

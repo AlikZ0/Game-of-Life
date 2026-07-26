@@ -59,6 +59,7 @@ describe('QuestsService.complete side-effects', () => {
     };
     const guilds = {
       recordWeeklyXp: jest.fn().mockResolvedValue(undefined),
+      recordActivity: jest.fn().mockResolvedValue(undefined),
     };
     const pvp = {
       recordProgress: jest.fn().mockResolvedValue(undefined),

@@ -194,6 +194,26 @@ export class GuildsService {
   }
 
   /**
+   * Feed a non-XP activity signal (quests completed, study/workout minutes,
+   * steps, …) into the character's guild missions of that metric. Best-effort
+   * and a no-op for characters that aren't in a guild — XP is handled by
+   * {@link recordWeeklyXp}, which also refreshes the leaderboard.
+   */
+  async recordActivity(
+    characterId: string,
+    metric: PvpMetric,
+    amount: number,
+  ): Promise<void> {
+    if (amount <= 0) return;
+    const member = await this.prisma.guildMember.findUnique({
+      where: { characterId },
+      select: { guildId: true },
+    });
+    if (!member) return;
+    await this.advanceMissions(member.guildId, metric, amount);
+  }
+
+  /**
    * Advance a guild's active missions of the given metric by `amount`. Any
    * mission that reaches its target is marked complete and its gold reward is
    * granted to every current member (best-effort). Idempotent per mission via

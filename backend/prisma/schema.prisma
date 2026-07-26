@@ -128,6 +128,7 @@ enum LedgerReason {
   SHOP_PURCHASE
   ADMIN_ADJUSTMENT
   PVP_REWARD
+  GUILD_MISSION
 }
 
 // ─────────────────────────────── Identity ──────────────────────────────────

@@ -1,6 +1,12 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
+import {
+  createRemoteJWKSet,
+  JWTPayload,
+  jwtVerify,
+  type JWTVerifyGetKey,
+} from 'jose';
 
 export interface OAuthProfile {
   providerId: string;
@@ -8,15 +14,21 @@ export interface OAuthProfile {
   emailVerified: boolean;
 }
 
+const APPLE_ISSUER = 'https://appleid.apple.com';
+const APPLE_JWKS_URL = new URL('https://appleid.apple.com/auth/keys');
+
 /**
- * Verifies OAuth ID tokens server-side. Google is fully implemented via
- * google-auth-library; Apple verification is stubbed with the same contract
- * (verify the JWT against Apple's public keys / audience) for a later sprint.
+ * Verifies OAuth ID tokens server-side. Google uses google-auth-library; Apple
+ * verifies the identity token's RS256 signature against Apple's published JWKS
+ * (cached by `jose`), and checks issuer / audience / expiry.
  */
 @Injectable()
 export class OAuthVerifier {
   private readonly logger = new Logger(OAuthVerifier.name);
   private readonly google: OAuth2Client;
+  /** Remote JWK set for Apple; `jose` caches keys and refreshes on rotation. */
+  private readonly appleJwks: JWTVerifyGetKey =
+    createRemoteJWKSet(APPLE_JWKS_URL);
 
   constructor(private readonly config: ConfigService) {
     this.google = new OAuth2Client(config.get<string>('oauth.googleClientId'));
@@ -43,10 +55,33 @@ export class OAuthVerifier {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async verifyApple(_idToken: string): Promise<OAuthProfile> {
-    // Sprint: verify Apple identity token signature against
-    // https://appleid.apple.com/auth/keys, check iss/aud/exp, extract sub/email.
-    throw new UnauthorizedException('Apple sign-in not yet configured');
+  async verifyApple(idToken: string): Promise<OAuthProfile> {
+    const audience = this.config.get<string>('oauth.appleClientId');
+    if (!audience) {
+      throw new UnauthorizedException('Apple sign-in is not configured');
+    }
+    try {
+      const { payload } = await jwtVerify(idToken, this.appleJwks, {
+        issuer: APPLE_ISSUER,
+        audience,
+      });
+      if (!payload.sub) throw new Error('Missing subject (sub) claim');
+      return {
+        providerId: payload.sub,
+        // Apple only returns `email` on the first authorization; on subsequent
+        // logins the user is matched by (provider, providerId) instead.
+        email: typeof payload.email === 'string' ? payload.email : '',
+        emailVerified: this.appleEmailVerified(payload),
+      };
+    } catch (err) {
+      this.logger.warn(`Apple verification failed: ${(err as Error).message}`);
+      throw new UnauthorizedException('Invalid Apple credential');
+    }
+  }
+
+  /** Apple encodes `email_verified` as the string "true" (or a boolean). */
+  private appleEmailVerified(payload: JWTPayload): boolean {
+    const v = (payload as Record<string, unknown>).email_verified;
+    return v === true || v === 'true';
   }
 }
